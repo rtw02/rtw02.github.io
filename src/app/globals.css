@@ -109,9 +109,9 @@ nav.on {
 }
 .hero-bg {
   position: absolute; inset: 0;
-  background-image: url('/images/jazz-vocalist.jpg');
+  background-image: url('/images/hero-jazz.jpg');
   background-size: cover;
-  background-position: center 30%;
+  background-position: 60% center;
 }
 .hero-bg::after {
   content: '';
