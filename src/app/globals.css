@@ -109,15 +109,15 @@ nav.on {
 }
 .hero-bg {
   position: absolute; inset: 0;
-  background-image: url('/images/hero-jazz.jpg');
+  background-image: url('/images/hero-nyc.jpg');
   background-size: cover;
-  background-position: 60% center;
+  background-position: center 30%;
 }
 .hero-bg::after {
   content: '';
   position: absolute; inset: 0;
   background:
-    linear-gradient(to top, oklch(7% .008 265 / .88) 0%, oklch(7% .008 265 / .55) 45%, oklch(7% .008 265 / .28) 100%);
+    linear-gradient(to top, oklch(7% .008 265 / .92) 0%, oklch(7% .008 265 / .60) 50%, oklch(7% .008 265 / .30) 100%);
 }
 .hero-inner { position: relative; z-index: 1; }
 
