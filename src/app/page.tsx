@@ -114,6 +114,7 @@ export default function Portfolio() {
         <a className="n-logo" href="#" aria-label="Ryan Wong — home">R.W</a>
         <ul className="n-links" role="list">
           <li><a href="#work">Work</a></li>
+          <li><a href="/galleries">Galleries</a></li>
           <li><a href="#services">Services</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
