@@ -38,7 +38,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': mime,
-        'Cache-Control': 'private, max-age=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
       },
     })
