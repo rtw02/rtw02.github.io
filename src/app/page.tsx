@@ -200,6 +200,7 @@ export default function Portfolio() {
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name">
+        <div className="hero-bg" aria-hidden="true" />
         <div className="h-count" aria-label="24 selected works">
           <div className="h-count-n">24</div>
           <div className="h-count-l">Selected Works</div>
