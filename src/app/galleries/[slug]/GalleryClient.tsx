@@ -133,7 +133,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
     const containerW = grid.clientWidth
     if (!containerW) return
     const GAP = 4
-    const cols = containerW > 900 ? 3 : containerW > 500 ? 2 : 1
+    const cols = containerW > 900 ? 3 : 2
     const colW = (containerW - GAP * (cols - 1)) / cols
     const colHeights = Array(cols).fill(0)
 
