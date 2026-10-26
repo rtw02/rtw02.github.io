@@ -3,6 +3,20 @@ import { readFile } from 'fs/promises'
 import { cookies } from 'next/headers'
 import path from 'path'
 import { getGalleryPin } from '@/lib/gallery-pins'
+
+// Blob URL map — populated by scripts/upload-to-blob.ts
+let blobUrls: Record<string, string> | null = null
+function getBlobUrls(): Record<string, string> {
+  if (blobUrls) return blobUrls
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    blobUrls = require('@/../src/data/blob-urls.json')
+  } catch {
+    blobUrls = {}
+  }
+  return blobUrls ?? {}
+}
+
 function mimeType(file: string): string {
   const ext = file.split('.').pop()?.toLowerCase()
   const map: Record<string, string> = {
@@ -25,7 +39,7 @@ export async function GET(
   // Sanitize: prevent path traversal
   const clean = segments.map(s => s.replace(/\.\./g, '').replace(/[^a-zA-Z0-9._-]/g, '_'))
   const slug = clean[0]
-  const filePath = path.join(process.cwd(), 'private-photos', 'galleries', ...clean)
+  const key = clean.join('/')
 
   // Check gallery PIN — allow if no PIN set, or session is admin, or gallery cookie matches
   const requiredPin = await getGalleryPin(slug)
@@ -41,7 +55,19 @@ export async function GET(
     }
   }
 
-  // Must stay within private-photos/galleries
+  // Try Blob URL first
+  const urls = getBlobUrls()
+  if (urls[key]) {
+    return NextResponse.redirect(urls[key], {
+      status: 302,
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    })
+  }
+
+  // Fallback: serve from filesystem (local dev / before blob upload)
+  const filePath = path.join(process.cwd(), 'private-photos', 'galleries', ...clean)
   const base = path.join(process.cwd(), 'private-photos', 'galleries')
   if (!filePath.startsWith(base)) {
     return new NextResponse('Forbidden', { status: 403 })
@@ -50,7 +76,6 @@ export async function GET(
   try {
     const data = await readFile(filePath)
     const mime = mimeType(filePath)
-
     return new NextResponse(data, {
       status: 200,
       headers: {
