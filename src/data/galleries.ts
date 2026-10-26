@@ -19,7 +19,7 @@ export const galleries: Gallery[] = [
     title: 'Mission',
     subtitle: 'New York City',
     date: 'October 2026',
-    cover: '/images/hero-nyc.jpg',
+    cover: '/images/mission-2026-cover.jpg',
     photos: [
       { src: "/api/photo/mission-2026/DSC07952.jpg", alt: "Mission NYC — October 2026", filename: "DSC07952.jpg" },
       { src: "/api/photo/mission-2026/DSC07953.jpg", alt: "Mission NYC — October 2026", filename: "DSC07953.jpg" },
