@@ -415,7 +415,8 @@ nav.on {
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   nav { padding: 1.2rem 1.25rem; }
-  .n-links { display: none; }
+  .n-links { gap: 1.2rem; }
+  .n-links a { font-size: .62rem; letter-spacing: .12em; }
   .hero { padding: 0 1.25rem 3rem; }
   .h-count { right: 1.25rem; }
   .work, .services, .contact { padding-inline: 1.25rem; }
