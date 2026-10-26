@@ -144,7 +144,6 @@ export default function Portfolio() {
           <li><a href="#work">Work</a></li>
           <li><a href="/galleries">Galleries</a></li>
           <li><a href="#services">Services</a></li>
-          <li><a href="#contact">Contact</a></li>
         </ul>
         <div className="n-badge" aria-label="Currently available for work">
           <div className="n-dot" />Available

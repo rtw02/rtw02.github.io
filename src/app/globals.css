@@ -413,7 +413,7 @@ nav.on {
 .ct-copy { font-size: .65rem; letter-spacing: .18em; color: var(--ink-3); }
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   nav { padding: 1.2rem 1.25rem; }
   .n-links { display: none; }
   .hero { padding: 0 1.25rem 3rem; }
