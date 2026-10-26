@@ -152,6 +152,15 @@ export default function Portfolio() {
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name">
         <div className="hero-bg" aria-hidden="true" />
+        <video
+          className="hero-video"
+          src="/videos/mission-suzie.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+        />
         <div className="h-count" aria-label="24 selected works">
           <div className="h-count-n">24</div>
           <div className="h-count-l">Selected Works</div>
@@ -215,26 +224,6 @@ export default function Portfolio() {
             </article>
           ))}
         </div>
-      </section>
-
-      {/* ── SERVICES ─────────────────────────────────────────────────────── */}
-      <section className="services" id="services" aria-labelledby="svc-title">
-        <div className="s-head">
-        </div>
-        <ul className="svc-list" role="list">
-          {[
-            ['01','Photography'],
-            ['02','Cinematography'],
-            ['03','Editorial'],
-            ['04','Commercial Film'],
-          ].map(([n, name]) => (
-            <li className="svc-item" key={n}>
-              <span className="svc-n">{n}</span>
-              <span className="svc-name">{name}</span>
-              <span className="svc-arr" aria-hidden="true">→</span>
-            </li>
-          ))}
-        </ul>
       </section>
 
       {/* ── LIGHTBOX ─────────────────────────────────────────────────────── */}
