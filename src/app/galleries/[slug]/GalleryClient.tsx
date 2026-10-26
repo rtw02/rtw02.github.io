@@ -34,6 +34,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
   }
 
   const canWebShare = typeof navigator !== 'undefined' &&
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
     typeof navigator.share === 'function' &&
     typeof navigator.canShare === 'function'
 
