@@ -77,30 +77,16 @@ nav.on {
   position: relative; min-height: 100svh;
   display: flex; flex-direction: column; justify-content: flex-end;
   padding: 0 2.75rem 4rem; overflow: hidden;
+  background: oklch(7% .008 265);
 }
-.hero-video {
+.hero::before {
+  content: '';
   position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 1.8s cubic-bezier(.23,1,.32,1);
-  z-index: 0;
-}
-.hero--in .hero-video {
-  opacity: 1;
-}
-.hero-overlay {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(to top, oklch(7% .008 265 / .85) 0%, oklch(7% .008 265 / .45) 55%, oklch(7% .008 265 / .15) 100%);
-  opacity: calc(var(--scroll-fade, 1) * 0.85 + 0.15);
-  z-index: 1;
+  background: radial-gradient(ellipse at 25% 65%, oklch(18% .02 280 / .5) 0%, transparent 65%);
   pointer-events: none;
 }
 .hero-inner {
-  position: relative; z-index: 3;
-  opacity: var(--scroll-fade, 1);
-  transform: translateY(calc((1 - var(--scroll-fade, 1)) * -24px));
+  position: relative; z-index: 1;
   opacity: 0;
   transform: translateY(18px);
   transition: opacity 1s ease .4s, transform 1s cubic-bezier(.23,1,.32,1) .4s;
@@ -108,6 +94,51 @@ nav.on {
 .hero--in .hero-inner {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ── video scroll section ──────────────────────────────────────── */
+.vid-section {
+  height: 350vh;
+  position: relative;
+}
+.vid-scene {
+  position: sticky; top: 0;
+  height: 100vh; width: 100%;
+  overflow: hidden;
+  background: #000;
+}
+.vid-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+.vid-blackout {
+  position: absolute; inset: 0;
+  background: #000;
+  z-index: 2;
+  pointer-events: none;
+}
+.vid-label {
+  position: absolute;
+  bottom: 10vh;
+  left: 2.75rem;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  display: flex; flex-direction: column; gap: .8rem;
+}
+.vid-eyebrow {
+  font-size: .65rem; font-weight: 400;
+  letter-spacing: .25em; text-transform: uppercase;
+  color: oklch(93% .005 65 / .4);
+}
+.vid-title {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  font-weight: 300; font-style: italic;
+  line-height: .92;
+  color: oklch(93% .005 65);
 }
 
 .h-eyebrow {
@@ -172,7 +203,6 @@ nav.on {
 .h-count {
   position: absolute; right: 2.75rem; top: 50%; transform: translateY(-50%);
   text-align: right; z-index: 3;
-  opacity: var(--scroll-fade, 1);
   animation: fade-in 1s ease .65s both;
 }
 .h-count-n {

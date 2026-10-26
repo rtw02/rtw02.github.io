@@ -8,7 +8,10 @@ export default function Portfolio() {
   const [lbxIdx, setLbxIdx] = useState<number | null>(null);
   const [count,  setCount]  = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const heroRef = useRef<HTMLElement>(null);
+  const videoRef     = useRef<HTMLVideoElement>(null);
+  const vidTrackRef  = useRef<HTMLDivElement>(null);
+  const vidBlackRef  = useRef<HTMLDivElement>(null);
+  const vidLabelRef  = useRef<HTMLDivElement>(null);
 
   const works = [
     { num:'01', tag:'Portrait',   name:'Light Through Stone', year:'Photography — 2023', src:'/images/portrait-window.jpg',  alt:'Portrait in Gothic window niche, backlit' },
@@ -91,16 +94,7 @@ export default function Portfolio() {
     });
 
     const nav = document.getElementById('nav');
-    const onScroll = () => {
-      nav?.classList.toggle('on', window.scrollY > 55);
-      // fade hero content as user scrolls — 0→50vh maps opacity 1→0
-      const hero = heroRef.current;
-      if (hero) {
-        const vh = window.innerHeight;
-        const t = Math.min(window.scrollY / (vh * 0.5), 1);
-        hero.style.setProperty('--scroll-fade', String(1 - t));
-      }
-    };
+    const onScroll = () => nav?.classList.toggle('on', window.scrollY > 55);
     window.addEventListener('scroll', onScroll, { passive: true });
 
     const emailEl = document.querySelector('.ct-email') as HTMLElement | null;
@@ -120,6 +114,51 @@ export default function Portfolio() {
       tiltCleanups.forEach(fn => fn());
     };
   }, []);
+
+  // ── Video section scroll driver ──────────────────────────────────────────
+  useEffect(() => {
+    const video   = videoRef.current;
+    const track   = vidTrackRef.current;
+    const blackout= vidBlackRef.current;
+    const label   = vidLabelRef.current;
+    if (!video || !track || !blackout) return;
+
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    const lerp  = (v: number, a: number, b: number, c: number, d: number) =>
+      c + (d - c) * clamp((v - a) / (b - a), 0, 1);
+
+    const onScroll = () => {
+      const trackScroll = track.offsetHeight - window.innerHeight;
+      const scrollInTrack = window.scrollY - (track.getBoundingClientRect().top + window.scrollY);
+      const p = clamp(scrollInTrack / trackScroll, 0, 1);
+
+      const blackOpacity = p < 0.08 ? 1
+        : p < 0.28 ? lerp(p, 0.08, 0.28, 1, 0)
+        : p < 0.75 ? 0
+        : lerp(p, 0.75, 0.92, 0, 1);
+      blackout.style.opacity = String(blackOpacity);
+
+      const vidOpacity = p < 0.08 ? 0
+        : p < 0.28 ? lerp(p, 0.08, 0.28, 0, 1)
+        : p < 0.75 ? 1
+        : lerp(p, 0.75, 0.92, 1, 0);
+      video.style.opacity = String(vidOpacity);
+
+      if (p >= 0.05 && p <= 0.95) { video.play().catch(() => {}); }
+      else { video.pause(); }
+
+      if (label) {
+        label.style.opacity = String(
+          clamp(lerp(p, 0.30, 0.45, 0, 1), 0, 1) *
+          clamp(lerp(p, 0.75, 0.88, 1, 0), 0, 1)
+        );
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [loaded]);
 
   // ── Keyboard nav for lightbox ─────────────────────────────────────────────
   useEffect(() => {
@@ -160,17 +199,7 @@ export default function Portfolio() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name" style={{'--scroll-fade': '1'} as React.CSSProperties}>
-        <video
-          className="hero-video"
-          src="/videos/hero.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden="true"
-        />
-        <div className="hero-overlay" aria-hidden="true" />
+      <section className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name">
         <div className="h-count" aria-label="24 selected works">
           <div className="h-count-n">24</div>
           <div className="h-count-l">Selected Works</div>
@@ -235,6 +264,26 @@ export default function Portfolio() {
           ))}
         </div>
       </section>
+
+      {/* ── VIDEO SECTION ────────────────────────────────────────────────── */}
+      <div ref={vidTrackRef} className="vid-section">
+        <div className="vid-scene">
+          <video
+            ref={videoRef}
+            className="vid-video"
+            src="/videos/hero.mp4"
+            muted
+            loop
+            playsInline
+            aria-hidden="true"
+          />
+          <div ref={vidBlackRef} className="vid-blackout" aria-hidden="true" />
+          <div ref={vidLabelRef} className="vid-label" aria-hidden="true">
+            <p className="vid-eyebrow">Cinematography &mdash; 2025</p>
+            <p className="vid-title">Mission,<br />New York</p>
+          </div>
+        </div>
+      </div>
 
       {/* ── LIGHTBOX ─────────────────────────────────────────────────────── */}
       {lbxIdx !== null && (() => {
