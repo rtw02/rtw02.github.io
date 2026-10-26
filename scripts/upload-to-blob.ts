@@ -32,9 +32,10 @@ async function main() {
     const blobPath = `galleries/${GALLERY}/${filename}`
 
     const { url } = await put(blobPath, data, {
-      access: 'public',
+      access: 'private' as const,
       addRandomSuffix: false,
       contentType: 'image/jpeg',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     })
 
     urls[`${GALLERY}/${filename}`] = url

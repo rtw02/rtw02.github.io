@@ -56,13 +56,19 @@ export async function GET(
     }
   }
 
-  // Try Blob URL first
+  // Try Blob first — proxy privately (store is private, token required)
   const urls = getBlobUrls()
   if (urls[key]) {
-    return NextResponse.redirect(urls[key], {
-      status: 302,
+    const blobRes = await fetch(urls[key], {
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    })
+    if (!blobRes.ok) return new NextResponse('Not found', { status: 404 })
+    return new NextResponse(blobRes.body, {
+      status: 200,
       headers: {
+        'Content-Type': mimeType(key),
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
       },
     })
   }
