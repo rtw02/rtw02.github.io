@@ -33,35 +33,58 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
     else setSelected(new Set(gallery.photos.map((_, i) => i)))
   }
 
+  const canWebShare = typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function'
+
+  const fetchBlobs = useCallback(async (indices: number[], onProgress?: (p: number) => void) => {
+    let done = 0
+    return Promise.all(indices.map(async idx => {
+      const photo = gallery.photos[idx]
+      const res = await fetch(photo.src)
+      const blob = await res.blob()
+      done++
+      onProgress?.(Math.round((done / indices.length) * 90))
+      return { filename: photo.filename, blob }
+    }))
+  }, [gallery])
+
   const download = useCallback(async (indices: number[]) => {
     if (!indices.length) return
     setDownloading(true)
     setProgress(0)
     try {
-      const { default: JSZip } = await import('jszip')
-      const zip = new JSZip()
-      let done = 0
-      await Promise.all(indices.map(async idx => {
-        const photo = gallery.photos[idx]
-        const res = await fetch(photo.src)
-        const blob = await res.blob()
-        zip.file(photo.filename, blob)
-        done++
-        setProgress(Math.round((done / indices.length) * 90))
-      }))
-      setProgress(95)
-      const content = await zip.generateAsync({ type: 'blob' })
-      const url = URL.createObjectURL(content)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${gallery.slug}.zip`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const blobs = await fetchBlobs(indices, setProgress)
+
+      if (indices.length === 1) {
+        // Single photo — direct file download, no zip
+        const url = URL.createObjectURL(blobs[0].blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = blobs[0].filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } else {
+        // Multiple photos — zip
+        const { default: JSZip } = await import('jszip')
+        const zip = new JSZip()
+        blobs.forEach(({ filename, blob }) => zip.file(filename, blob))
+        setProgress(95)
+        const content = await zip.generateAsync({ type: 'blob' })
+        const url = URL.createObjectURL(content)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${gallery.slug}.zip`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+
       setProgress(100)
       setTimeout(() => { setProgress(0); setDownloading(false) }, 1200)
-
       fetch('/api/analytics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +94,101 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
       setDownloading(false)
       setProgress(0)
     }
-  }, [gallery])
+  }, [gallery, fetchBlobs])
+
+  const share = useCallback(async (indices: number[]) => {
+    if (!indices.length || !canWebShare) return
+    setDownloading(true)
+    setProgress(0)
+    try {
+      const blobs = await fetchBlobs(indices, setProgress)
+      const files = blobs.map(({ filename, blob }) =>
+        new File([blob], filename, { type: blob.type || 'image/jpeg' })
+      )
+      if (!navigator.canShare({ files })) return
+      await navigator.share({ files, title: gallery.title })
+      setProgress(100)
+      setTimeout(() => { setProgress(0); setDownloading(false) }, 800)
+    } catch (err: unknown) {
+      // AbortError = user cancelled share sheet — not a real error
+      if (err instanceof Error && err.name !== 'AbortError') console.error(err)
+      setDownloading(false)
+      setProgress(0)
+    }
+  }, [gallery, fetchBlobs, canWebShare])
+
+  // JS masonry — left-to-right chronological order with no gaps
+  const masonryLayout = useCallback(() => {
+    const grid = gridRef.current
+    if (!grid) return
+    const containerW = grid.clientWidth
+    if (!containerW) return
+    const GAP = 4
+    const cols = containerW > 900 ? 3 : containerW > 500 ? 2 : 1
+    const colW = (containerW - GAP * (cols - 1)) / cols
+    const colHeights = Array(cols).fill(0)
+
+    const items = grid.querySelectorAll<HTMLElement>('.gal-item')
+    items.forEach((item, i) => {
+      const photo = gallery.photos[i]
+      if (!photo) return
+      const shortestIdx = colHeights.indexOf(Math.min(...colHeights))
+      const left = shortestIdx * (colW + GAP)
+      const top = colHeights[shortestIdx]
+      const h = colW * (photo.h / photo.w)
+
+      item.style.left = `${left}px`
+      item.style.top = `${top}px`
+      item.style.width = `${colW}px`
+      item.style.height = `${h}px`
+
+      colHeights[shortestIdx] += h + GAP
+    })
+    grid.style.height = `${Math.max(...colHeights) - GAP}px`
+  }, [gallery.photos])
+
+  useEffect(() => {
+    masonryLayout()
+    const ro = new ResizeObserver(masonryLayout)
+    if (gridRef.current) ro.observe(gridRef.current)
+    return () => ro.disconnect()
+  }, [masonryLayout])
+
+  // Grid item hover parallax — direct DOM, no re-renders
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+
+    let activeEl: HTMLElement | null = null
+
+    const onMove = (e: MouseEvent) => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>('.gal-item')
+      if (!item) return
+      const r = item.getBoundingClientRect()
+      const x = (e.clientX - r.left) / r.width - 0.5
+      const y = (e.clientY - r.top) / r.height - 0.5
+      item.style.transform = `perspective(700px) rotateX(${-y * 8}deg) rotateY(${x * 8}deg) scale(1.02)`
+      item.style.zIndex = '2'
+      if (activeEl && activeEl !== item) {
+        activeEl.style.transform = ''
+        activeEl.style.zIndex = ''
+      }
+      activeEl = item
+    }
+
+    const onLeave = (e: MouseEvent) => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>('.gal-item')
+      if (item) { item.style.transform = ''; item.style.zIndex = '' }
+      activeEl = null
+    }
+
+    grid.addEventListener('mousemove', onMove)
+    grid.addEventListener('mouseleave', onLeave)
+    return () => {
+      grid.removeEventListener('mousemove', onMove)
+      grid.removeEventListener('mouseleave', onLeave)
+    }
+  }, [])
 
   // Staggered entrance via IntersectionObserver
   useEffect(() => {
@@ -222,13 +339,27 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
             <button className="gal-sel-clear" onClick={() => setSelected(new Set())}>Clear</button>
           </div>
           <div className="gal-sel-actions">
-            <button
-              className="gal-btn-sel-dl"
-              onClick={() => download(selectedArr)}
-              disabled={downloading}
-            >
-              {downloading ? `Downloading… ${progress}%` : `↓ Download ${selected.size}`}
-            </button>
+            {canWebShare ? (
+              <button
+                className="gal-btn-sel-dl"
+                onClick={() => share(selectedArr)}
+                disabled={downloading}
+              >
+                {downloading ? `${progress}%` : `⬆ Save ${selected.size} to Photos`}
+              </button>
+            ) : (
+              <button
+                className="gal-btn-sel-dl"
+                onClick={() => download(selectedArr)}
+                disabled={downloading}
+              >
+                {downloading
+                  ? `${progress}%`
+                  : selected.size === 1
+                    ? '↓ Download'
+                    : `↓ Download ${selected.size} (zip)`}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -250,11 +381,21 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
             <button className="lbx-nav lbx-next" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx + 1) % gallery.photos.length) }}>→</button>
             <div className="lbx-meta" onClick={e => e.stopPropagation()}>
               <div className="lbx-name">{photo.alt}</div>
+              <div className="lbx-filename">{photo.filename}</div>
               <div className="lbx-actions">
-                <button
-                  className="gal-btn gal-btn-ghost lbx-dl"
-                  onClick={e => { e.stopPropagation(); download([lbxIdx]) }}
-                >↓ Download</button>
+                {canWebShare ? (
+                  <button
+                    className="gal-btn gal-btn-ghost lbx-dl"
+                    onClick={e => { e.stopPropagation(); share([lbxIdx]) }}
+                    disabled={downloading}
+                  >{downloading ? `${progress}%` : '⬆ Save to Photos'}</button>
+                ) : (
+                  <button
+                    className="gal-btn gal-btn-ghost lbx-dl"
+                    onClick={e => { e.stopPropagation(); download([lbxIdx]) }}
+                    disabled={downloading}
+                  >{downloading ? `${progress}%` : '↓ Download'}</button>
+                )}
                 {isAdmin && (
                   <button
                     className="gal-btn gal-btn-ghost lbx-replace"

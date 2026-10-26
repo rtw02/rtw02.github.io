@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
+import { cookies } from 'next/headers'
 import path from 'path'
+import { getGalleryPin } from '@/lib/gallery-pins'
 function mimeType(file: string): string {
   const ext = file.split('.').pop()?.toLowerCase()
   const map: Record<string, string> = {
@@ -22,7 +24,22 @@ export async function GET(
 
   // Sanitize: prevent path traversal
   const clean = segments.map(s => s.replace(/\.\./g, '').replace(/[^a-zA-Z0-9._-]/g, '_'))
+  const slug = clean[0]
   const filePath = path.join(process.cwd(), 'private-photos', 'galleries', ...clean)
+
+  // Check gallery PIN — allow if no PIN set, or session is admin, or gallery cookie matches
+  const requiredPin = await getGalleryPin(slug)
+  if (requiredPin) {
+    const cookieStore = await cookies()
+    const session = cookieStore.get('rw-session')
+    const isAdmin = session?.value === process.env.DASHBOARD_SECRET
+    if (!isAdmin) {
+      const galCookie = cookieStore.get(`rw-gallery-${slug}`)
+      if (galCookie?.value !== requiredPin) {
+        return new NextResponse('Unauthorized', { status: 401 })
+      }
+    }
+  }
 
   // Must stay within private-photos/galleries
   const base = path.join(process.cwd(), 'private-photos', 'galleries')

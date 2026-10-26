@@ -21,6 +21,21 @@ export const metadata: Metadata = {
   title: 'Ryan Wong — Photography & Film',
   description: 'Portfolio of Ryan Wong, photographer and cinematographer based in New York.',
   icons: { icon: '/favicon.svg' },
+  metadataBase: new URL('https://ryanwongcreative.vercel.app'),
+  openGraph: {
+    title: 'Ryan Wong — Photography & Film',
+    description: 'Portfolio of Ryan Wong, photographer and cinematographer based in New York.',
+    url: 'https://ryanwongcreative.vercel.app',
+    siteName: 'Ryan Wong Creative',
+    images: [{ url: '/images/hero-nyc.jpg', width: 1200, height: 800, alt: 'Ryan Wong Photography' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ryan Wong — Photography & Film',
+    description: 'Portfolio of Ryan Wong, photographer and cinematographer based in New York.',
+    images: ['/images/hero-nyc.jpg'],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -313,7 +313,8 @@ nav.on {
   position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
   text-align: center; pointer-events: all; white-space: nowrap;
 }
-.lbx-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 300; margin-bottom: .3rem; }
+.lbx-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 300; margin-bottom: .2rem; }
+.lbx-filename { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: .3rem; }
 .lbx-year { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-2); }
 .lbx-close {
   position: absolute; top: 1.5rem; right: 1.75rem;
@@ -561,22 +562,20 @@ nav.on {
 /* responsive photo grid — full photos, no crop */
 .gal-grid-wrap { padding: 4px 4px 7rem; background: #fff; }
 .gal-justified {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(160px, 28vw, 340px), 1fr));
-  gap: 4px;
+  position: relative;
 }
 .gal-item {
-  position: relative;
+  position: absolute;
   cursor: pointer;
   overflow: hidden;
   /* entrance animation */
   opacity: 0;
   transform: translateY(14px);
-  transition: opacity .4s ease, transform .4s ease, outline .15s;
+  transition: opacity .4s ease, transform .25s cubic-bezier(.23,1,.32,1), outline .15s;
 }
 .gal-item.vis { opacity: 1; transform: translateY(0); }
 .gal-item-img {
-  display: block; width: 100%; height: auto;
+  display: block; width: 100%; height: 100%; object-fit: cover;
   transition: transform .5s cubic-bezier(.23,1,.32,1);
 }
 .gal-item:hover .gal-item-img { transform: scale(1.03); }
