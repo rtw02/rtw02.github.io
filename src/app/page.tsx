@@ -143,7 +143,6 @@ export default function Portfolio() {
         <ul className="n-links" role="list">
           <li><a href="#work">Work</a></li>
           <li><a href="/galleries">Galleries</a></li>
-          <li><a href="#services">Services</a></li>
         </ul>
         <div className="n-badge" aria-label="Currently available for work">
           <div className="n-dot" />Available
