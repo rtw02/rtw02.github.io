@@ -51,22 +51,30 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
 
   const download = useCallback(async (indices: number[]) => {
     if (!indices.length) return
+
+    if (indices.length === 1) {
+      // Single photo — native browser download to default Downloads folder, no blob
+      const photo = gallery.photos[indices[0]]
+      const a = document.createElement('a')
+      a.href = photo.src
+      a.download = photo.filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'download', gallery: gallery.slug, count: 1 }),
+      }).catch(() => {})
+      return
+    }
+
     setDownloading(true)
     setProgress(0)
     try {
       const blobs = await fetchBlobs(indices, setProgress)
 
-      if (indices.length === 1) {
-        // Single photo — direct file download, no zip
-        const url = URL.createObjectURL(blobs[0].blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = blobs[0].filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      } else {
+      {
         // Multiple photos — zip
         const { default: JSZip } = await import('jszip')
         const zip = new JSZip()
