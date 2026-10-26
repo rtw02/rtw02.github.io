@@ -439,7 +439,9 @@ nav.on {
   .wi:nth-child(14) { grid-column: 1/3; grid-row: 9; }
   .wi:nth-child(15) { grid-column: 1/2; grid-row: 10; }
   .wi:nth-child(16) { grid-column: 2/3; grid-row: 10; }
-  .lbx-nav { display: none; }
+  .lbx-nav { width: 2.2rem; height: 2.2rem; font-size: .9rem; }
+  .lbx-prev { left: .5rem; }
+  .lbx-next { right: .5rem; }
   .lbx-img { max-width: 96vw; }
   .about { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.25rem; }
   .svc-item:hover { padding-left: 1.25rem; padding-right: 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem; }
