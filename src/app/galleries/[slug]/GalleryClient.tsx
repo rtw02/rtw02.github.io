@@ -17,6 +17,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
   const lbxCardRef = useRef<HTMLDivElement>(null)
   const tiltRaf = useRef<number>(0)
   const tilt = useRef({ tx: 0, ty: 0, cx: 0, cy: 0 })
+  const touchStartX = useRef<number>(0)
 
   const allSelected = selected.size === gallery.photos.length
 
@@ -377,7 +378,22 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
         const photo = gallery.photos[lbxIdx]
         return (
           <>
-          <div className="lbx" role="dialog" aria-modal onClick={() => setLbxIdx(null)}>
+          <div
+            className="lbx" role="dialog" aria-modal
+            onClick={() => setLbxIdx(null)}
+            onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+            onTouchEnd={e => {
+              const dx = e.changedTouches[0].clientX - touchStartX.current
+              if (Math.abs(dx) > 50) {
+                e.stopPropagation()
+                setLbxIdx(prev => prev === null ? null :
+                  dx < 0
+                    ? (prev + 1) % gallery.photos.length
+                    : (prev - 1 + gallery.photos.length) % gallery.photos.length
+                )
+              }
+            }}
+          >
             <span className="lbx-counter">{String(lbxIdx + 1).padStart(2,'0')} / {String(gallery.photos.length).padStart(2,'0')}</span>
             <button className="lbx-close" onClick={() => setLbxIdx(null)}>✕</button>
             <button className="lbx-nav lbx-prev" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx - 1 + gallery.photos.length) % gallery.photos.length) }}>←</button>
