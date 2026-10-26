@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import Lenis from 'lenis';
+// cursor is rendered globally in layout.tsx
 
 export default function Portfolio() {
-  const dotRef  = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
   const [lbxIdx, setLbxIdx] = useState<number | null>(null);
+  const [count,  setCount]  = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
   const works = [
     { num:'01', tag:'Portrait',   name:'Light Through Stone', year:'Photography — 2023', src:'/images/portrait-window.jpg',  alt:'Portrait in Gothic window niche, backlit' },
@@ -26,49 +28,40 @@ export default function Portfolio() {
     { num:'16', tag:'Portrait',   name:'Harvest',             year:'Photography — 2026', src:'/images/apple-juggle.jpg',      alt:'Portrait in apple orchard, Fishkill Farms' },
   ];
 
+  // ── Loading counter ───────────────────────────────────────────────────────
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      setLbxIdx(prev => {
-        if (prev === null) return null;
-        if (e.key === 'Escape') return null;
-        if (e.key === 'ArrowRight') return (prev + 1) % works.length;
-        if (e.key === 'ArrowLeft')  return (prev - 1 + works.length) % works.length;
-        return prev;
-      });
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const dot  = dotRef.current;
-    const ring = ringRef.current;
-    if (!dot || !ring) return;
-
-    let mx = window.innerWidth / 2, my = window.innerHeight / 2;
-    let rx = mx, ry = my;
+    let frame = 0;
+    const total = 100;
     let rafId: number;
 
-    const onMove  = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
-    const onLeave = () => { dot!.style.opacity = '0'; ring!.style.opacity = '0'; };
-    const onEnter = () => { dot!.style.opacity = '1'; ring!.style.opacity = '1'; };
+    const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
-    function loop() {
-      dot!.style.left = mx + 'px';
-      dot!.style.top  = my + 'px';
-      rx += (mx - rx) * 0.07;
-      ry += (my - ry) * 0.07;
-      ring!.style.left = rx + 'px';
-      ring!.style.top  = ry + 'px';
-      rafId = requestAnimationFrame(loop);
-    }
-    loop();
+    const tick = () => {
+      frame++;
+      const progress = ease(Math.min(frame / total, 1));
+      setCount(Math.round(progress * 100));
+      if (frame < total) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        setTimeout(() => setLoaded(true), 500);
+      }
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseleave', onLeave);
-    document.addEventListener('mouseenter', onEnter);
+  // ── Lenis smooth scroll ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!loaded) return;
+    const lenis = new Lenis({ duration: 1.4 });
+    let rafId: number;
+    function raf(time: number) { lenis.raf(time); rafId = requestAnimationFrame(raf); }
+    rafId = requestAnimationFrame(raf);
+    return () => { cancelAnimationFrame(rafId); lenis.destroy(); };
+  }, [loaded]);
 
+  // ── Cursor hover classes + card tilt + nav + email ───────────────────────
+  useEffect(() => {
     function addHover(selector: string, cls: string) {
       document.querySelectorAll(selector).forEach(el => {
         el.addEventListener('mouseenter', () => document.body.classList.add(cls));
@@ -77,6 +70,24 @@ export default function Portfolio() {
     }
     addHover('a, .n-badge, .svc-item', 'c-link');
     addHover('.wi', 'c-work');
+
+    // Card tilt
+    const tiltCleanups: Array<() => void> = [];
+    document.querySelectorAll<HTMLElement>('.wi').forEach(wi => {
+      const onTiltMove = (e: MouseEvent) => {
+        const r = wi.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width  - 0.5;
+        const y = (e.clientY - r.top)  / r.height - 0.5;
+        wi.style.transform = `perspective(700px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) scale(1.025)`;
+      };
+      const onTiltLeave = () => { wi.style.transform = ''; };
+      wi.addEventListener('mousemove', onTiltMove);
+      wi.addEventListener('mouseleave', onTiltLeave);
+      tiltCleanups.push(() => {
+        wi.removeEventListener('mousemove', onTiltMove);
+        wi.removeEventListener('mouseleave', onTiltLeave);
+      });
+    });
 
     const nav = document.getElementById('nav');
     const onScroll = () => nav?.classList.toggle('on', window.scrollY > 55);
@@ -94,20 +105,37 @@ export default function Portfolio() {
     emailEl?.addEventListener('click', onEmailClick);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseleave', onLeave);
-      document.removeEventListener('mouseenter', onEnter);
       window.removeEventListener('scroll', onScroll);
       emailEl?.removeEventListener('click', onEmailClick);
+      tiltCleanups.forEach(fn => fn());
     };
+  }, []);
+
+  // ── Keyboard nav for lightbox ─────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      setLbxIdx(prev => {
+        if (prev === null) return null;
+        if (e.key === 'Escape') return null;
+        if (e.key === 'ArrowRight') return (prev + 1) % works.length;
+        if (e.key === 'ArrowLeft')  return (prev - 1 + works.length) % works.length;
+        return prev;
+      });
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
-      {/* ── CURSOR ───────────────────────────────────────────────────────── */}
-      <div ref={dotRef}  id="c-dot"  aria-hidden="true" />
-      <div ref={ringRef} id="c-ring" aria-hidden="true" />
+      {/* ── LOADER ───────────────────────────────────────────────────────── */}
+      <div className={`loader${loaded ? ' loader--out' : ''}`} aria-hidden="true">
+        <div className="loader-inner">
+          <div className="loader-count">{count}</div>
+          <div className="loader-label">Loading</div>
+        </div>
+      </div>
 
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
       <nav id="nav" role="navigation" aria-label="Main">
@@ -124,7 +152,7 @@ export default function Portfolio() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="hero" aria-labelledby="hero-name">
+      <section className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name">
         <div className="hero-bg" aria-hidden="true" />
         <div className="h-count" aria-label="24 selected works">
           <div className="h-count-n">24</div>
