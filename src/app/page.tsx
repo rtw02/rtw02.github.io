@@ -159,7 +159,7 @@ export default function Portfolio() {
           <div className="h-count-l">Selected Works</div>
         </div>
         <div className="hero-inner">
-          <p className="h-eyebrow" aria-hidden="true">Portfolio &mdash; 2024</p>
+          <p className="h-eyebrow" aria-hidden="true">Portfolio &mdash; 2026</p>
           <h1 className="h-name" id="hero-name">
             <span className="h-n1">RYAN</span>
             <span className="h-n2">WONG</span>
@@ -268,20 +268,12 @@ export default function Portfolio() {
         );
       })()}
 
-      {/* ── CONTACT ──────────────────────────────────────────────────────── */}
-      <section className="contact" id="contact" aria-labelledby="ct-heading">
-        <p className="ct-eyebrow">Get in touch</p>
-        <div className="ct-big" id="ct-heading">
-          <span>Let&rsquo;s</span>
-          <span className="ct-italic">Work.</span>
+      {/* ── FOOTER ───────────────────────────────────────────────────────── */}
+      <footer className="contact" id="contact">
+        <div className="ct-foot" style={{borderTop:'1px solid var(--line)',paddingTop:'1.8rem'}}>
+          <span className="ct-copy">&copy; 2026 Ryan Wong</span>
         </div>
-        <div className="ct-foot">
-          <span className="ct-email" role="button" tabIndex={0} title="Click to copy email">
-            rtwong02@gmail.com
-          </span>
-          <span className="ct-copy">&copy; 2024 Ryan Wong</span>
-        </div>
-      </section>
+      </footer>
     </>
   );
 }
