@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
+import { readFileSync } from 'fs'
 import { cookies } from 'next/headers'
 import path from 'path'
 import { getGalleryPin } from '@/lib/gallery-pins'
@@ -9,8 +10,8 @@ let blobUrls: Record<string, string> | null = null
 function getBlobUrls(): Record<string, string> {
   if (blobUrls) return blobUrls
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    blobUrls = require('@/../src/data/blob-urls.json')
+    const raw = readFileSync(path.join(process.cwd(), 'src', 'data', 'blob-urls.json'), 'utf-8')
+    blobUrls = JSON.parse(raw)
   } catch {
     blobUrls = {}
   }
