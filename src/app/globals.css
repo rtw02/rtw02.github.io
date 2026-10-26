@@ -547,6 +547,8 @@ nav.on {
   letter-spacing: .1em; text-transform: uppercase;
   padding: .5rem 1rem; border-radius: 3px; cursor: pointer; border: none;
   transition: background .15s, color .15s, border-color .15s, opacity .18s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
 }
 .gal-btn:disabled { opacity: .5; cursor: not-allowed; }
 .gal-btn-ghost {
@@ -644,6 +646,8 @@ nav.on {
   background: transparent; color: #fff;
   border: 1px solid rgba(255,255,255,.35);
   transition: background .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
 }
 .gal-btn-sel-dl:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.6); }
 .gal-btn-sel-dl:disabled { opacity: .5; cursor: not-allowed; }

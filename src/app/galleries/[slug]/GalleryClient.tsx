@@ -354,7 +354,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                 onClick={() => share(selectedArr)}
                 disabled={downloading}
               >
-                {downloading ? `${progress}%` : `⬆ Save ${selected.size} to Photos`}
+                {downloading ? `${progress}%` : `Save ${selected.size} to Photos`}
               </button>
             ) : (
               <button
@@ -397,7 +397,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                     className="gal-btn gal-btn-ghost lbx-dl"
                     onClick={e => { e.stopPropagation(); share([lbxIdx]) }}
                     disabled={downloading}
-                  >{downloading ? `${progress}%` : '⬆ Save to Photos'}</button>
+                  >{downloading ? `${progress}%` : 'Save to Photos'}</button>
                 ) : (
                   <button
                     className="gal-btn gal-btn-ghost lbx-dl"
