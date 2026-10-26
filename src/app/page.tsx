@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Lenis from 'lenis';
 // cursor is rendered globally in layout.tsx
 
@@ -8,6 +8,7 @@ export default function Portfolio() {
   const [lbxIdx, setLbxIdx] = useState<number | null>(null);
   const [count,  setCount]  = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
 
   const works = [
     { num:'01', tag:'Portrait',   name:'Light Through Stone', year:'Photography — 2023', src:'/images/portrait-window.jpg',  alt:'Portrait in Gothic window niche, backlit' },
@@ -90,7 +91,16 @@ export default function Portfolio() {
     });
 
     const nav = document.getElementById('nav');
-    const onScroll = () => nav?.classList.toggle('on', window.scrollY > 55);
+    const onScroll = () => {
+      nav?.classList.toggle('on', window.scrollY > 55);
+      // fade hero content as user scrolls — 0→50vh maps opacity 1→0
+      const hero = heroRef.current;
+      if (hero) {
+        const vh = window.innerHeight;
+        const t = Math.min(window.scrollY / (vh * 0.5), 1);
+        hero.style.setProperty('--scroll-fade', String(1 - t));
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
 
     const emailEl = document.querySelector('.ct-email') as HTMLElement | null;
@@ -150,17 +160,17 @@ export default function Portfolio() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name">
-        <div className="hero-bg" aria-hidden="true" />
+      <section ref={heroRef} className={`hero${loaded ? ' hero--in' : ''}`} aria-labelledby="hero-name" style={{'--scroll-fade': '1'} as React.CSSProperties}>
         <video
           className="hero-video"
-          src="/videos/mission-suzie.mp4"
+          src="/videos/hero.mp4"
           autoPlay
           muted
           loop
           playsInline
           aria-hidden="true"
         />
+        <div className="hero-overlay" aria-hidden="true" />
         <div className="h-count" aria-label="24 selected works">
           <div className="h-count-n">24</div>
           <div className="h-count-l">Selected Works</div>

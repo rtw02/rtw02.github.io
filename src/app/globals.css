@@ -78,39 +78,29 @@ nav.on {
   display: flex; flex-direction: column; justify-content: flex-end;
   padding: 0 2.75rem 4rem; overflow: hidden;
 }
-.hero-bg {
-  position: absolute; inset: 0;
-  background-image: url('/images/hero-nyc.jpg');
-  background-size: cover;
-  background-position: center 30%;
-  filter: blur(14px) brightness(.7);
-  transform: scale(1.06);
-  transition: filter 1.6s cubic-bezier(.23,1,.32,1), transform 1.6s cubic-bezier(.23,1,.32,1);
-}
-.hero--in .hero-bg {
-  filter: blur(0px) brightness(1);
-  transform: scale(1);
-}
 .hero-video {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 1.6s cubic-bezier(.23,1,.32,1);
-  z-index: 1;
+  transition: opacity 1.8s cubic-bezier(.23,1,.32,1);
+  z-index: 0;
 }
 .hero--in .hero-video {
-  opacity: 0.55;
+  opacity: 1;
 }
-.hero-bg::after {
-  content: '';
+.hero-overlay {
   position: absolute; inset: 0;
   background:
-    linear-gradient(to top, oklch(7% .008 265 / .92) 0%, oklch(7% .008 265 / .60) 50%, oklch(7% .008 265 / .30) 100%);
-  z-index: 2;
+    linear-gradient(to top, oklch(7% .008 265 / .85) 0%, oklch(7% .008 265 / .45) 55%, oklch(7% .008 265 / .15) 100%);
+  opacity: calc(var(--scroll-fade, 1) * 0.85 + 0.15);
+  z-index: 1;
+  pointer-events: none;
 }
 .hero-inner {
   position: relative; z-index: 3;
+  opacity: var(--scroll-fade, 1);
+  transform: translateY(calc((1 - var(--scroll-fade, 1)) * -24px));
   opacity: 0;
   transform: translateY(18px);
   transition: opacity 1s ease .4s, transform 1s cubic-bezier(.23,1,.32,1) .4s;
@@ -182,6 +172,7 @@ nav.on {
 .h-count {
   position: absolute; right: 2.75rem; top: 50%; transform: translateY(-50%);
   text-align: right; z-index: 3;
+  opacity: var(--scroll-fade, 1);
   animation: fade-in 1s ease .65s both;
 }
 .h-count-n {
