@@ -67,7 +67,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': mimeType(key),
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
       },
     })
@@ -87,7 +87,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': mime,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
       },
     })

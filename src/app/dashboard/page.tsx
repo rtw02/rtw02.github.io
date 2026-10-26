@@ -27,12 +27,18 @@ export default function DashboardPage() {
   const [pins, setPins] = useState<PinsMap>({})
   const [pinSaving, setPinSaving] = useState<Record<string, boolean>>({})
   const [pinMsg, setPinMsg] = useState<Record<string, string>>({})
+  const [counts, setCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetch('/api/analytics')
       .then(r => r.json())
       .then(setData)
       .catch(() => setErr('Failed to load analytics.'))
+
+    fetch('/api/galleries/counts')
+      .then(r => r.json())
+      .then(setCounts)
+      .catch(() => {})
 
     fetch('/api/galleries/pin')
       .then(r => r.json())
@@ -219,7 +225,7 @@ export default function DashboardPage() {
                   <img src={g.cover} alt={g.title} className="dash-gal-thumb" />
                   <div>
                     <div className="dash-gal-name">{g.title}</div>
-                    <div className="dash-gal-info">{g.photos.length} photos · {g.date}</div>
+                    <div className="dash-gal-info">{counts[g.slug] ?? g.photos.length} photos · {g.date}</div>
                   </div>
                 </Link>
                 <div className="dash-pin-ctrl">

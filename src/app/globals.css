@@ -692,6 +692,28 @@ nav.on {
   background: #fff; border-color: #fff; color: #1a1a1a;
   transform: scale(1.1);
 }
+.gal-item-delete {
+  position: absolute; top: .5rem; right: .5rem;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(200,30,30,.75); border: none; color: #fff;
+  font-size: .65rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s, background .2s;
+  z-index: 4;
+}
+.gal-item:hover .gal-item-delete { opacity: 1; }
+.gal-item-delete:hover { background: rgba(200,30,30,1); }
+.gal-btn-delete {
+  padding: .45rem .95rem;
+  font-size: .7rem; font-weight: 500; letter-spacing: .06em;
+  border-radius: 4px; cursor: pointer;
+  background: rgba(180,30,30,.15);
+  border: 1px solid rgba(200,50,50,.4);
+  color: #e07070;
+  transition: background .2s, border-color .2s;
+}
+.gal-btn-delete:hover { background: rgba(180,30,30,.3); border-color: rgba(200,50,50,.7); }
+.gal-btn-delete:disabled { opacity: .5; cursor: not-allowed; }
 
 /* selection bar */
 .gal-sel-bar {

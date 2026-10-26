@@ -215,8 +215,6 @@ export const galleries: Gallery[] = [
       { src: "/api/photo/euro-summa-2026/DSC07390.jpg", alt: "Europe Summer 2026", filename: "DSC07390.jpg", w: 1080, h: 1620 },
       { src: "/api/photo/euro-summa-2026/DSC07391.jpg", alt: "Europe Summer 2026", filename: "DSC07391.jpg", w: 1080, h: 1620 },
       { src: "/api/photo/euro-summa-2026/DSC07392.jpg", alt: "Europe Summer 2026", filename: "DSC07392.jpg", w: 1080, h: 1620 },
-      { src: "/api/photo/euro-summa-2026/IMG_0955.jpg", alt: "Europe Summer 2026", filename: "IMG_0955.jpg", w: 1536, h: 2048 },
-      { src: "/api/photo/euro-summa-2026/IMG_1350.jpg", alt: "Europe Summer 2026", filename: "IMG_1350.jpg", w: 1536, h: 2048 },
     ],
   },
 ]

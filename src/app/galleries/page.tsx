@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import { galleries } from '@/data/galleries'
+import { getLiveCount } from '@/lib/blob-photos'
 
 export const metadata = { title: 'Galleries — Ryan Wong' }
+export const dynamic = 'force-dynamic'
 
-export default function GalleriesPage() {
+export default async function GalleriesPage() {
+  const counts = await Promise.all(
+    galleries.map(g => getLiveCount(g.slug, g.photos))
+  )
   return (
     <main className="gal-list-page">
       <div className="gal-list-header">
@@ -12,7 +17,7 @@ export default function GalleriesPage() {
         <p className="gal-list-sub">{galleries.length} collections</p>
       </div>
       <div className="gal-list-grid">
-        {galleries.map(g => (
+        {galleries.map((g, i) => (
           <Link key={g.slug} href={`/galleries/${g.slug}`} className="gal-card">
             <div className="gal-card-img-wrap">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -22,7 +27,7 @@ export default function GalleriesPage() {
             <div className="gal-card-info">
               <span className="gal-card-date">{g.date}</span>
               <h2 className="gal-card-name">{g.title}</h2>
-              <span className="gal-card-loc">{g.subtitle} &nbsp;·&nbsp; {g.photos.length} photos</span>
+              <span className="gal-card-loc">{g.subtitle} &nbsp;·&nbsp; {counts[i]} photos</span>
             </div>
           </Link>
         ))}

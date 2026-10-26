@@ -2,7 +2,10 @@ import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import { galleries } from '@/data/galleries'
 import { getGalleryPin } from '@/lib/gallery-pins'
+import { getLiveFilenames, filterLive } from '@/lib/blob-photos'
 import GalleryClient from './GalleryClient'
+
+export const dynamic = 'force-dynamic'
 
 export default async function GalleryPage({ params }: { params: { slug: string } }) {
   const { slug } = params
@@ -22,5 +25,8 @@ export default async function GalleryPage({ params }: { params: { slug: string }
   const session = cookieStore.get('rw-session')
   const isAdmin = session?.value === process.env.DASHBOARD_SECRET
 
-  return <GalleryClient gallery={gallery} isAdmin={isAdmin} />
+  const live = await getLiveFilenames(slug)
+  const livePhotos = filterLive(gallery.photos, live)
+
+  return <GalleryClient gallery={{ ...gallery, photos: livePhotos }} isAdmin={isAdmin} />
 }

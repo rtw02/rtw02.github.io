@@ -7,11 +7,14 @@ import type { Gallery } from '@/data/galleries'
 export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; isAdmin?: boolean }) {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [visItems, setVisItems] = useState<Set<number>>(new Set())
+  const [deletedPhotos, setDeletedPhotos] = useState<Set<number>>(new Set())
   const [downloading, setDownloading] = useState(false)
   const [lbxIdx, setLbxIdx] = useState<number | null>(null)
   const [progress, setProgress] = useState(0)
   const [replacing, setReplacing] = useState(false)
   const [replaceMsg, setReplaceMsg] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteMsg, setDeleteMsg] = useState('')
   const gridRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lbxCardRef = useRef<HTMLDivElement>(null)
@@ -19,7 +22,35 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
   const tilt = useRef({ tx: 0, ty: 0, cx: 0, cy: 0 })
   const touchStartX = useRef<number>(0)
 
-  const allSelected = selected.size === gallery.photos.length
+  const visiblePhotos = gallery.photos.filter((_, i) => !deletedPhotos.has(i))
+  const allSelected = selected.size === visiblePhotos.length
+
+  const deletePhoto = useCallback(async (idx: number) => {
+    const photo = gallery.photos[idx]
+    if (!photo) return
+    setDeleting(true)
+    setDeleteMsg('Deleting…')
+    try {
+      const res = await fetch('/api/photo/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: gallery.slug, filename: photo.filename }),
+      })
+      if (res.ok) {
+        setDeletedPhotos(prev => { const s = new Set(prev); s.add(idx); return s })
+        setLbxIdx(null)
+        setSelected(prev => { const s = new Set(prev); s.delete(idx); return s })
+        setDeleteMsg('')
+      } else {
+        const { error } = await res.json().catch(() => ({ error: 'Failed' }))
+        setDeleteMsg(error || 'Failed')
+      }
+    } catch {
+      setDeleteMsg('Failed')
+    } finally {
+      setTimeout(() => { setDeleting(false); setDeleteMsg('') }, 2000)
+    }
+  }, [gallery])
 
   const toggle = (i: number) => {
     setSelected(prev => {
@@ -138,9 +169,10 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
     const colW = (containerW - GAP * (cols - 1)) / cols
     const colHeights = Array(cols).fill(0)
 
+    const visPhotos = gallery.photos.filter((_, idx) => !deletedPhotos.has(idx))
     const items = grid.querySelectorAll<HTMLElement>('.gal-item')
     items.forEach((item, i) => {
-      const photo = gallery.photos[i]
+      const photo = visPhotos[i]
       if (!photo) return
       const shortestIdx = colHeights.indexOf(Math.min(...colHeights))
       const left = shortestIdx * (colW + GAP)
@@ -155,7 +187,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
       colHeights[shortestIdx] += h + GAP
     })
     grid.style.height = `${Math.max(...colHeights) - GAP}px`
-  }, [gallery.photos])
+  }, [gallery.photos, deletedPhotos])
 
   useEffect(() => {
     masonryLayout()
@@ -302,6 +334,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
       <main className="gal-grid-wrap">
         <div className="gal-justified" ref={gridRef}>
           {gallery.photos.map((photo, i) => {
+            if (deletedPhotos.has(i)) return null
             const isSelected = selected.has(i)
             const isVis = visItems.has(i)
             return (
@@ -327,6 +360,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                   className="gal-item-img"
                   loading={i < 12 ? 'eager' : 'lazy'}
                   fetchPriority={i < 6 ? 'high' : 'auto'}
+                  onError={() => setDeletedPhotos(prev => { const s = new Set(prev); s.add(i); return s })}
                 />
                 <div className="gal-item-overlay" />
                 <button
@@ -336,6 +370,18 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                 >
                   <span className="gal-item-check-dot">{isSelected ? '✓' : ''}</span>
                 </button>
+                {isAdmin && (
+                  <button
+                    className="gal-item-delete"
+                    aria-label="Delete photo"
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (confirm(`Delete ${photo.filename}? This cannot be undone.`)) deletePhoto(i)
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             )
           })}
@@ -427,6 +473,16 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                     onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
                     disabled={replacing}
                   >{replacing ? replaceMsg || 'Uploading…' : '⇄ Replace'}</button>
+                )}
+                {isAdmin && (
+                  <button
+                    className="gal-btn gal-btn-delete"
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (confirm(`Delete ${photo.filename}? This cannot be undone.`)) deletePhoto(lbxIdx)
+                    }}
+                    disabled={deleting}
+                  >{deleting ? deleteMsg || 'Deleting…' : '✕ Delete'}</button>
                 )}
               </div>
             </div>
