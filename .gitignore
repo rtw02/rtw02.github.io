@@ -29,3 +29,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# private photos (stored in Vercel Blob)
+private-photos/
