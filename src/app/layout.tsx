@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, Outfit } from 'next/font/google'
 import './globals.css'
-import Cursor from './Cursor'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -21,13 +20,13 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Ryan Wong — Photography & Film',
   description: 'Portfolio of Ryan Wong, photographer and cinematographer based in New York.',
+  icons: { icon: '/favicon.svg' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${cormorant.variable} ${outfit.variable}`}>
-        <Cursor />
         {children}
       </body>
     </html>

@@ -4,12 +4,18 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import type { Gallery } from '@/data/galleries'
 
-export default function GalleryClient({ gallery }: { gallery: Gallery }) {
+export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; isAdmin?: boolean }) {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [downloading, setDownloading] = useState(false)
   const [lbxIdx, setLbxIdx] = useState<number | null>(null)
   const [progress, setProgress] = useState(0)
+  const [replacing, setReplacing] = useState(false)
+  const [replaceMsg, setReplaceMsg] = useState('')
   const gridRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const lbxCardRef = useRef<HTMLDivElement>(null)
+  const tiltRaf = useRef<number>(0)
+  const tilt = useRef({ tx: 0, ty: 0, cx: 0, cy: 0 })
 
   const allSelected = selected.size === gallery.photos.length
 
@@ -106,6 +112,41 @@ export default function GalleryClient({ gallery }: { gallery: Gallery }) {
     }).catch(() => {})
   }, [gallery.slug])
 
+  // Reset tilt when lightbox closes
+  useEffect(() => {
+    if (lbxIdx === null) {
+      cancelAnimationFrame(tiltRaf.current)
+      tilt.current = { tx: 0, ty: 0, cx: 0, cy: 0 }
+      if (lbxCardRef.current) lbxCardRef.current.style.transform = ''
+    }
+  }, [lbxIdx])
+
+  const onTiltMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const card = lbxCardRef.current
+    if (!card) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    tilt.current.tx = x * 14
+    tilt.current.ty = -y * 10
+    if (!tiltRaf.current) {
+      const loop = () => {
+        const t = tilt.current
+        t.cx += (t.tx - t.cx) * 0.1
+        t.cy += (t.ty - t.cy) * 0.1
+        if (lbxCardRef.current)
+          lbxCardRef.current.style.transform = `rotateX(${t.cy}deg) rotateY(${t.cx}deg) scale3d(1.02,1.02,1.02)`
+        tiltRaf.current = requestAnimationFrame(loop)
+      }
+      tiltRaf.current = requestAnimationFrame(loop)
+    }
+  }, [])
+
+  const onTiltLeave = useCallback(() => {
+    tilt.current.tx = 0
+    tilt.current.ty = 0
+  }, [])
+
   const selectedArr = Array.from(selected)
 
   return (
@@ -193,21 +234,71 @@ export default function GalleryClient({ gallery }: { gallery: Gallery }) {
       {lbxIdx !== null && (() => {
         const photo = gallery.photos[lbxIdx]
         return (
+          <>
           <div className="lbx" role="dialog" aria-modal onClick={() => setLbxIdx(null)}>
             <span className="lbx-counter">{String(lbxIdx + 1).padStart(2,'0')} / {String(gallery.photos.length).padStart(2,'0')}</span>
             <button className="lbx-close" onClick={() => setLbxIdx(null)}>✕</button>
             <button className="lbx-nav lbx-prev" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx - 1 + gallery.photos.length) % gallery.photos.length) }}>←</button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="lbx-img" src={photo.src} alt={photo.alt} onClick={e => e.stopPropagation()} />
+            <div className="lbx-scene" onMouseMove={onTiltMove} onMouseLeave={onTiltLeave} onClick={e => e.stopPropagation()}>
+              <div className="lbx-card" ref={lbxCardRef}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="lbx-img" src={photo.src} alt={photo.alt} />
+              </div>
+            </div>
             <button className="lbx-nav lbx-next" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx + 1) % gallery.photos.length) }}>→</button>
             <div className="lbx-meta" onClick={e => e.stopPropagation()}>
               <div className="lbx-name">{photo.alt}</div>
-              <button
-                className="gal-btn gal-btn-ghost lbx-dl"
-                onClick={e => { e.stopPropagation(); download([lbxIdx]) }}
-              >↓ Download</button>
+              <div className="lbx-actions">
+                <button
+                  className="gal-btn gal-btn-ghost lbx-dl"
+                  onClick={e => { e.stopPropagation(); download([lbxIdx]) }}
+                >↓ Download</button>
+                {isAdmin && (
+                  <button
+                    className="gal-btn gal-btn-ghost lbx-replace"
+                    onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                    disabled={replacing}
+                  >{replacing ? replaceMsg || 'Uploading…' : '⇄ Replace'}</button>
+                )}
+              </div>
             </div>
           </div>
+          {isAdmin && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={async e => {
+                const file = e.target.files?.[0]
+                if (!file || lbxIdx === null) return
+                setReplacing(true)
+                setReplaceMsg('Uploading…')
+                const fd = new FormData()
+                fd.append('file', file)
+                fd.append('slug', gallery.slug)
+                fd.append('filename', gallery.photos[lbxIdx].filename)
+                try {
+                  const res = await fetch('/api/photo/replace', { method: 'POST', body: fd })
+                  if (res.ok) {
+                    setReplaceMsg('Done!')
+                    // bust browser cache for this photo
+                    const img = document.querySelector<HTMLImageElement>(`.lbx-img`)
+                    if (img) img.src = gallery.photos[lbxIdx].src + '?t=' + Date.now()
+                  } else {
+                    const { error } = await res.json().catch(() => ({ error: 'Failed' }))
+                    setReplaceMsg(error || 'Failed')
+                  }
+                } catch {
+                  setReplaceMsg('Failed')
+                } finally {
+                  setTimeout(() => { setReplacing(false); setReplaceMsg('') }, 2000)
+                  e.target.value = ''
+                }
+              }}
+            />
+          )}
+          </>
         )
       })()}
     </div>

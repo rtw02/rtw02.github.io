@@ -10,14 +10,17 @@ export default async function GalleryPage({ params }: { params: { slug: string }
   if (!gallery) notFound()
 
   const requiredPin = await getGalleryPin(slug)
+  const cookieStore = await cookies()
 
   if (requiredPin) {
-    const cookieStore = await cookies()
     const galCookie = cookieStore.get(`rw-gallery-${slug}`)
     if (galCookie?.value !== requiredPin) {
       redirect(`/galleries/${slug}/unlock`)
     }
   }
 
-  return <GalleryClient gallery={gallery} />
+  const session = cookieStore.get('rw-session')
+  const isAdmin = session?.value === process.env.DASHBOARD_SECRET
+
+  return <GalleryClient gallery={gallery} isAdmin={isAdmin} />
 }
