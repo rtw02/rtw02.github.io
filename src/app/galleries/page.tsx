@@ -16,7 +16,7 @@ export default function GalleriesPage() {
           <Link key={g.slug} href={`/galleries/${g.slug}`} className="gal-card">
             <div className="gal-card-img-wrap">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.cover} alt={g.title} className="gal-card-img" />
+              <img src={g.cover} alt={g.title} className="gal-card-img" loading="eager" fetchPriority="high" />
               <div className="gal-card-overlay" />
             </div>
             <div className="gal-card-info">

@@ -151,7 +151,13 @@ export default function GalleryClient({ gallery }: { gallery: Gallery }) {
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.src} alt={photo.alt} className="gal-item-img" loading="lazy" />
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  className="gal-item-img"
+                  loading={i < 12 ? 'eager' : 'lazy'}
+                  fetchPriority={i < 6 ? 'high' : 'auto'}
+                />
                 <div className="gal-item-overlay" />
                 <button
                   className="gal-item-check"
