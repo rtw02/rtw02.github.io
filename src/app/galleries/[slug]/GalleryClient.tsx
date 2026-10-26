@@ -6,6 +6,7 @@ import type { Gallery } from '@/data/galleries'
 
 export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; isAdmin?: boolean }) {
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [visItems, setVisItems] = useState<Set<number>>(new Set())
   const [downloading, setDownloading] = useState(false)
   const [lbxIdx, setLbxIdx] = useState<number | null>(null)
   const [progress, setProgress] = useState(0)
@@ -81,7 +82,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
         if (entry.isIntersecting) {
           const el = entry.target as HTMLElement
           const idx = Array.from(items).indexOf(el)
-          setTimeout(() => el.classList.add('vis'), idx * 45)
+          setTimeout(() => setVisItems(prev => { const s = new Set(prev); s.add(idx); return s }), idx * 45)
           io.unobserve(el)
         }
       })
@@ -175,10 +176,11 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
         <div className="gal-justified" ref={gridRef}>
           {gallery.photos.map((photo, i) => {
             const isSelected = selected.has(i)
+            const isVis = visItems.has(i)
             return (
               <div
                 key={i}
-                className={`gal-item${isSelected ? ' gal-item--selected' : ''}`}
+                className={`gal-item${isVis ? ' vis' : ''}${isSelected ? ' gal-item--selected' : ''}`}
                 onClick={e => {
                   // Only open lightbox if click is in the center area (not near top-left corner)
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
