@@ -8,7 +8,19 @@
 
 import { put } from '@vercel/blob'
 import { readdir, readFile, writeFile } from 'fs/promises'
+import { readFileSync } from 'fs'
 import path from 'path'
+
+// Load .env.local if token not already in environment
+if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  try {
+    const env = readFileSync(path.join(process.cwd(), '.env.local'), 'utf-8')
+    for (const line of env.split('\n')) {
+      const m = line.match(/^([^#=]+)=(.*)$/)
+      if (m) process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, '')
+    }
+  } catch {}
+}
 
 const GALLERIES_DIR = path.join(process.cwd(), 'private-photos', 'galleries')
 const OUT_FILE = path.join(process.cwd(), 'src', 'data', 'blob-urls.json')
