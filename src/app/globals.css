@@ -154,6 +154,32 @@ nav.on {
   line-height: .92;
   color: oklch(93% .005 65);
 }
+.vid-sound {
+  position: absolute;
+  bottom: 10vh;
+  right: 2.75rem;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s;
+  background: none;
+  border: 1px solid oklch(93% .005 65 / .25);
+  color: oklch(93% .005 65 / .7);
+  border-radius: 50%;
+  width: 2.75rem; height: 2.75rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: .75rem; letter-spacing: .08em;
+  transition: opacity .4s, border-color .2s, color .2s;
+}
+.vid-sound.vid-sound--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.vid-sound:hover {
+  border-color: oklch(93% .005 65 / .6);
+  color: oklch(93% .005 65);
+}
 
 .h-eyebrow {
   display: flex; align-items: center; gap: 1.1rem;

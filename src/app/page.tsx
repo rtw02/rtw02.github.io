@@ -12,6 +12,8 @@ export default function Portfolio() {
   const vidTrackRef  = useRef<HTMLDivElement>(null);
   const vidBlackRef  = useRef<HTMLDivElement>(null);
   const vidLabelRef  = useRef<HTMLDivElement>(null);
+  const vidSoundRef  = useRef<HTMLButtonElement>(null);
+  const [muted, setMuted] = useState(true);
 
   const works = [
     { num:'01', tag:'Portrait',   name:'Light Through Stone', year:'Photography — 2023', src:'/images/portrait-window.jpg',  alt:'Portrait in Gothic window niche, backlit' },
@@ -144,8 +146,12 @@ export default function Portfolio() {
         : lerp(p, 0.75, 0.92, 1, 0);
       video.style.opacity = String(vidOpacity);
 
-      if (p >= 0.05 && p <= 0.95) { video.play().catch(() => {}); }
+      const playing = p >= 0.05 && p <= 0.95;
+      if (playing) { video.play().catch(() => {}); }
       else { video.pause(); }
+
+      const soundBtn = vidSoundRef.current;
+      if (soundBtn) soundBtn.classList.toggle('vid-sound--visible', playing);
 
       if (label) {
         label.style.opacity = String(
@@ -283,6 +289,19 @@ export default function Portfolio() {
             <p className="vid-eyebrow">Cinematography &mdash; 2025</p>
             <p className="vid-title">Mission,<br />New York</p>
           </div>
+          <button
+            ref={vidSoundRef}
+            className="vid-sound"
+            aria-label={muted ? 'Unmute video' : 'Mute video'}
+            onClick={() => {
+              const video = videoRef.current;
+              if (!video) return;
+              video.muted = !video.muted;
+              setMuted(video.muted);
+            }}
+          >
+            {muted ? '♪' : '♫'}
+          </button>
         </div>
       </div>
 
