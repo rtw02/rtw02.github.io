@@ -56,19 +56,52 @@ export async function GET(
     }
   }
 
-  // Try Blob first — proxy privately (store is private, token required)
+  // Try Blob first — proxy privately (store is private, token required).
+  //
+  // Caching order:
+  //   1. Hit the blob store to confirm the photo still exists.
+  //   2. Forward the client's If-None-Match so the store decides whether the
+  //      cached copy is still current (ETag is the blob's content hash, i.e.
+  //      it changes whenever the photo is re-uploaded).
+  //   3. Blob gone              -> 404 (gallery drops it).
+  //      Blob unchanged (304)   -> 304, browser reuses its cached image.
+  //      Anything else          -> 200 fresh bytes + current ETag.
+  // Cache-Control: private, no-cache keeps the copy but forces a revalidation
+  // on every use, so a deleted or replaced blob is caught immediately.
   const urls = getBlobUrls()
   if (urls[key]) {
+    const ifNoneMatch = request.headers.get('if-none-match')
     const blobRes = await fetch(urls[key], {
-      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        ...(ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {}),
+      },
+      cache: 'no-store',
     })
+
+    // Photo no longer in blob storage
+    if (blobRes.status === 404) return new NextResponse('Not found', { status: 404 })
+
+    const etag = blobRes.headers.get('etag') ?? ifNoneMatch ?? undefined
+    const lastModified = blobRes.headers.get('last-modified') ?? undefined
+    const revalidate: Record<string, string> = { 'Cache-Control': 'private, no-cache' }
+    if (etag) revalidate['ETag'] = etag
+    if (lastModified) revalidate['Last-Modified'] = lastModified
+
+    // Cached copy still current — let the browser reuse it
+    if (blobRes.status === 304) {
+      return new NextResponse(null, { status: 304, headers: revalidate })
+    }
+
     if (!blobRes.ok) return new NextResponse('Not found', { status: 404 })
+
+    // Fresh bytes
     return new NextResponse(blobRes.body, {
       status: 200,
       headers: {
-        'Content-Type': mimeType(key),
-        'Cache-Control': 'private, no-store',
+        'Content-Type': blobRes.headers.get('content-type') ?? mimeType(key),
         'X-Content-Type-Options': 'nosniff',
+        ...revalidate,
       },
     })
   }
