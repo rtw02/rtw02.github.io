@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
+
+/* /experience — immersive WebGL landing. Deliberately single dark cinematic world. */
+
+:root {
+  --exp-bg: #050507;
+  --exp-fg: #ECE7DF;
+  --exp-muted: #86807a;
+  --exp-accent: #D6603A;
+  --exp-line: rgba(236, 231, 223, .14);
+  --exp-disp: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --exp-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+.exp-root {
+  background: var(--exp-bg);
+  color: var(--exp-fg);
+  font-family: var(--exp-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.exp-grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  mix-blend-mode: overlay; opacity: .5;
+}
+.exp-vignette {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 42%, transparent 55%, rgba(0, 0, 0, .72) 100%);
+}
+
+.exp-track { position: relative; z-index: 2; height: 640vh; pointer-events: none; }
+
+.exp-eyebrow { font-size: .68rem; letter-spacing: .34em; text-transform: uppercase; color: var(--exp-muted); }
+
+.exp-topbar {
+  position: fixed; z-index: 4; top: env(safe-area-inset-top, 0px); left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.3rem max(18px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.exp-mark { font-family: var(--exp-disp); font-size: 1.15rem; letter-spacing: .02em; }
+.exp-mark b { color: var(--exp-accent); font-weight: 400; }
+.exp-tag {
+  font-size: .6rem; letter-spacing: .22em; text-transform: uppercase; color: var(--exp-muted);
+  border: 1px solid var(--exp-line); border-radius: 100px; padding: .3rem .6rem;
+}
+
+.exp-hero {
+  position: fixed; z-index: 4; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; padding: 0 max(18px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.exp-hero h1 {
+  font-family: var(--exp-disp); font-weight: 400; line-height: .92; margin: 0;
+  font-size: clamp(3.2rem, 15vw, 10rem); letter-spacing: -.01em; text-wrap: balance;
+}
+.exp-hero h1 em { font-style: italic; color: var(--exp-accent); }
+.exp-hero p { max-width: 30ch; margin: 1.6rem auto 0; color: var(--exp-muted); font-size: .95rem; line-height: 1.5; }
+
+.exp-hint {
+  position: fixed; z-index: 4; left: 50%; bottom: calc(1.6rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); font-size: .6rem; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--exp-muted); pointer-events: none;
+}
+.exp-hint span {
+  display: block; width: 1px; height: 34px; margin: .6rem auto 0;
+  background: linear-gradient(var(--exp-muted), transparent);
+  animation: exp-drip 2.2s ease-in-out infinite;
+}
+@keyframes exp-drip {
+  0%, 100% { transform: scaleY(.3); opacity: .3; transform-origin: top; }
+  50% { transform: scaleY(1); opacity: 1; transform-origin: top; }
+}
+
+.exp-caption {
+  position: fixed; z-index: 4; bottom: calc(2.4rem + env(safe-area-inset-bottom, 0px));
+  left: max(18px, env(safe-area-inset-left, 0px)); right: max(18px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
+  pointer-events: none; transition: opacity .45s;
+}
+.exp-idx { font-family: var(--exp-disp); font-size: 2.4rem; line-height: 1; color: var(--exp-accent); }
+.exp-ttl { font-family: var(--exp-disp); font-size: clamp(1.4rem, 4vw, 2.4rem); line-height: 1; }
+.exp-meta { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--exp-muted); text-align: right; min-width: 0; }
+
+.exp-marquee {
+  position: fixed; z-index: 4; bottom: 0; left: 0; right: 0; overflow: hidden;
+  border-top: 1px solid var(--exp-line); background: rgba(5, 5, 7, .55); backdrop-filter: blur(6px);
+  padding: .55rem 0 calc(.55rem + env(safe-area-inset-bottom, 0px)); pointer-events: none;
+}
+.exp-row { display: flex; gap: 2.5rem; white-space: nowrap; width: max-content; animation: exp-slide 26s linear infinite; }
+.exp-row span { font-size: .64rem; letter-spacing: .24em; text-transform: uppercase; color: var(--exp-muted); }
+.exp-row span b { color: var(--exp-fg); font-weight: 400; }
+@keyframes exp-slide { to { transform: translateX(-50%); } }
+
+.exp-outro {
+  position: fixed; z-index: 4; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; opacity: 0; padding: 0 max(18px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.exp-outro h2 { font-family: var(--exp-disp); font-weight: 400; font-size: clamp(2.4rem, 9vw, 5.5rem); margin: 0; line-height: 1; }
+.exp-cta {
+  pointer-events: auto; margin-top: 2rem; display: inline-flex; gap: .6rem; align-items: center;
+  border: 1px solid var(--exp-line); border-radius: 100px; padding: .8rem 1.4rem;
+  font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--exp-fg);
+  text-decoration: none; transition: border-color .2s, background .2s;
+}
+.exp-cta:hover { border-color: var(--exp-accent); background: rgba(214, 96, 58, .1); }
+
+.exp-progress { position: fixed; z-index: 5; top: 0; left: 0; height: 2px; width: 0; background: var(--exp-accent); }
+
+.exp-cursor {
+  position: fixed; z-index: 6; top: 0; left: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 1px solid var(--exp-accent); border-radius: 50%; pointer-events: none;
+  transition: opacity .3s; mix-blend-mode: difference;
+}
+@media (pointer: coarse) { .exp-cursor { display: none; } }
+
+.exp-fallback {
+  position: fixed; inset: 0; z-index: 3; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  background: var(--exp-bg); color: var(--exp-muted); padding: 0 24px;
+  font-family: var(--exp-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exp-row, .exp-hint span { animation: none; }
+}
+@media (max-width: 560px) {
+  .exp-idx { font-size: 1.6rem; }
+  .exp-meta { display: none; }
+}

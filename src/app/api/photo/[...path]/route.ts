@@ -4,6 +4,7 @@ import { readFileSync } from 'fs'
 import { cookies } from 'next/headers'
 import path from 'path'
 import { getGalleryPin } from '@/lib/gallery-pins'
+import { experienceKeys } from '@/lib/experience-photos'
 
 // Blob URL map — populated by scripts/upload-to-blob.ts
 let blobUrls: Record<string, string> | null = null
@@ -42,9 +43,10 @@ export async function GET(
   const slug = clean[0]
   const key = clean.join('/')
 
-  // Check gallery PIN — allow if no PIN set, or session is admin, or gallery cookie matches
+  // Check gallery PIN — allow if no PIN set, or session is admin, or gallery cookie
+  // matches. Photos explicitly approved for /experience bypass the PIN entirely.
   const requiredPin = await getGalleryPin(slug)
-  if (requiredPin) {
+  if (requiredPin && !experienceKeys().has(key)) {
     const cookieStore = await cookies()
     const session = cookieStore.get('rw-session')
     const isAdmin = session?.value === process.env.DASHBOARD_SECRET
