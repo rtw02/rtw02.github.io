@@ -114,9 +114,12 @@ function Rig({ shared, reduce }: { shared: React.MutableRefObject<Shared>; reduc
 export default function Scene({
   shared,
   reduce,
+  fixed = true,
 }: {
   shared: React.MutableRefObject<Shared>
   reduce: boolean
+  /** true = cover the whole viewport (standalone route); false = fill parent (inline section). */
+  fixed?: boolean
 }) {
   const textures = useMemo(() => {
     const loader = new THREE.TextureLoader()
@@ -136,7 +139,7 @@ export default function Scene({
       dpr={[1, 2]}
       camera={{ position: [0, 0, Z_START], fov: 52, near: 0.1, far: 100 }}
       gl={{ antialias: true }}
-      style={{ position: 'fixed', inset: 0, zIndex: 0 }}
+      style={{ position: fixed ? 'fixed' : 'absolute', inset: 0, zIndex: 0 }}
     >
       <color attach="background" args={['#050507']} />
       <fogExp2 attach="fog" args={['#050507', 0.062]} />

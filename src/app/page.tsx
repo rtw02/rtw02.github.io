@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Lenis from 'lenis';
+import ExperienceSection from './experience/ExperienceSection';
+import './experience/experience.css';
 // cursor is rendered globally in layout.tsx
 
 export default function Portfolio() {
@@ -241,6 +243,9 @@ export default function Portfolio() {
           ))}
         </div>
       </div>
+
+      {/* ── IMMERSIVE REEL ───────────────────────────────────────────────── */}
+      <ExperienceSection />
 
       {/* ── WORK ─────────────────────────────────────────────────────────── */}
       <section className="work" id="work" aria-labelledby="work-title">

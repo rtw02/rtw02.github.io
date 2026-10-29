@@ -129,6 +129,42 @@ html.lenis, html.lenis body { height: auto; }
   font-family: var(--exp-body);
 }
 
+/* ── inline homepage section (sticky scroll stage) ───────────────────────── */
+.exp-sec { position: relative; height: 520vh; background: var(--exp-bg); }
+.exp-sec--static {
+  height: auto; min-height: 60vh; display: flex; align-items: center; justify-content: center;
+  color: var(--exp-fg); font-family: var(--exp-body);
+}
+.exp-stage {
+  position: sticky; top: 0; height: 100vh; overflow: hidden;
+  background: var(--exp-bg); color: var(--exp-fg); font-family: var(--exp-body);
+}
+.exps-grain {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  mix-blend-mode: overlay; opacity: .5;
+}
+.exps-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 42%, transparent 55%, rgba(0, 0, 0, .72) 100%);
+}
+.exps-intro {
+  position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center; pointer-events: none;
+  padding: 0 max(18px, env(safe-area-inset-left, 0px));
+}
+.exps-title {
+  font-family: var(--exp-disp); font-weight: 400; font-style: italic; margin: .4rem 0 0;
+  font-size: clamp(2.6rem, 10vw, 6.5rem); line-height: 1; color: var(--exp-fg);
+}
+.exps-caption {
+  position: absolute; z-index: 4; bottom: 2.4rem;
+  left: max(18px, env(safe-area-inset-left, 0px)); right: max(18px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
+  pointer-events: none; transition: opacity .45s;
+}
+.exps-progress { position: absolute; z-index: 5; bottom: 0; left: 0; height: 2px; width: 0; background: var(--exp-accent); }
+@media (max-width: 560px) { .exps-caption .exp-meta { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .exp-row, .exp-hint span { animation: none; }
 }

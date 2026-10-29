@@ -8,8 +8,13 @@
 
 export const EXPERIENCE_SLUG = 'mission-2026'
 
-// e.g. 'DSC07952.jpg' — fill with Ryan-approved filenames.
-export const EXPERIENCE_PHOTOS: string[] = []
+// Ryan-approved, tattoo-free mission-2026 photos cleared for public display.
+export const EXPERIENCE_PHOTOS: string[] = [
+  'DSC07952.jpg',
+  'DSC08206.jpg',
+  'DSC08262.jpg',
+  'DSC08284.jpg',
+]
 
 /** Set of `${slug}/${filename}` keys that the proxy serves without a PIN. */
 export function experienceKeys(): Set<string> {
