@@ -138,14 +138,12 @@ export default function Portfolio() {
 
       const blackOpacity = p < 0.08 ? 1
         : p < 0.28 ? lerp(p, 0.08, 0.28, 1, 0)
-        : p < 0.75 ? 0
-        : lerp(p, 0.75, 0.92, 0, 1);
+        : 0;
       blackout.style.opacity = String(blackOpacity);
 
       const vidOpacity = p < 0.08 ? 0
         : p < 0.28 ? lerp(p, 0.08, 0.28, 0, 1)
-        : p < 0.75 ? 1
-        : lerp(p, 0.75, 0.92, 1, 0);
+        : 1;
       video.style.opacity = String(vidOpacity);
 
       const playing = p >= 0.05 && p <= 0.95;

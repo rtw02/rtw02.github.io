@@ -140,6 +140,12 @@ html.lenis, html.lenis body { height: auto; }
   /* match the page background exactly so the section has no visible seam */
   background: var(--bg); color: var(--exp-fg); font-family: var(--exp-body);
 }
+/* darkening-only film layer (over the canvas, under the UI) */
+.exps-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(125% 100% at 50% 45%, transparent 46%, rgba(0, 0, 0, .78) 100%);
+}
+
 /* gradient masks: the page colour fading into the scene at top and bottom */
 .exps-seam { position: absolute; left: 0; right: 0; z-index: 2; height: 16vh; pointer-events: none; }
 .exps-seam--top { top: 0; background: linear-gradient(var(--bg), transparent); }

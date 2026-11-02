@@ -2,29 +2,14 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { EffectComposer, Noise, Vignette, ChromaticAberration, DepthOfField } from '@react-three/postprocessing'
-import { BlendFunction } from 'postprocessing'
+import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
 import { AnaglyphEffect } from 'three/examples/jsm/effects/AnaglyphEffect.js'
 import { ParallaxBarrierEffect } from 'three/examples/jsm/effects/ParallaxBarrierEffect.js'
 import { WORKS, GAP, Z_START, Z_END, type Work } from './works'
 
 export type StereoMode = 'none' | 'anaglyph' | 'parallax'
-
-// Resolve the page's --bg token to a three color so the scene background/fog
-// match the surrounding page exactly (seamless seams).
-function pageBgColor(): THREE.Color {
-  try {
-    const probe = document.createElement('span')
-    probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#06070b'
-    document.body.appendChild(probe)
-    const resolved = getComputedStyle(probe).color
-    document.body.removeChild(probe)
-    return new THREE.Color().setStyle(resolved)
-  } catch {
-    return new THREE.Color('#06070b')
-  }
-}
 
 export type Shared = {
   progress: number
@@ -189,18 +174,30 @@ export default function Scene({
 }) {
   const textures = useMemo(() => {
     const loader = new THREE.TextureLoader()
+    const planeAspect = 3.1 / 4.65 // portrait plane w/h
     return WORKS.map((w) => {
       if (w.src) {
-        const t = loader.load(w.src)
+        // "cover" fit: center-crop the image to the plane aspect so it never squeezes
+        const t = loader.load(w.src, (tex) => {
+          const img = tex.image as { width: number; height: number }
+          const imgAspect = img.width / img.height
+          if (imgAspect > planeAspect) {
+            tex.repeat.set(planeAspect / imgAspect, 1)
+            tex.offset.set((1 - planeAspect / imgAspect) / 2, 0)
+          } else {
+            tex.repeat.set(1, imgAspect / planeAspect)
+            tex.offset.set(0, (1 - imgAspect / planeAspect) / 2)
+          }
+          tex.needsUpdate = true
+        })
         t.colorSpace = THREE.SRGBColorSpace
         t.anisotropy = 4
+        t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping
         return t
       }
       return plateTexture(w)
     })
   }, [])
-
-  const bg = useMemo(() => pageBgColor(), [])
 
   return (
     <Canvas
@@ -209,17 +206,16 @@ export default function Scene({
       gl={{ antialias: true }}
       style={{ position: fixed ? 'fixed' : 'absolute', inset: 0, zIndex: 0 }}
     >
-      <color attach="background" args={[bg]} />
-      <fogExp2 attach="fog" args={[bg, 0.055]} />
+      <color attach="background" args={['#050507']} />
+      <fogExp2 attach="fog" args={['#050507', 0.055]} />
       <Plates textures={textures} />
       <Mirrors textures={textures} visible={reflect} />
       <Rig shared={shared} reduce={reduce} />
       {stereo === 'none' ? (
         <EffectComposer multisampling={4}>
-          <DepthOfField focusDistance={0.02} focalLength={0.05} bokehScale={2} />
+          <Bloom intensity={0.4} luminanceThreshold={0.6} luminanceSmoothing={0.2} mipmapBlur />
           <ChromaticAberration offset={new THREE.Vector2(0.0006, 0.0006)} radialModulation={false} modulationOffset={0} />
-          <Vignette eskil={false} offset={0.32} darkness={0.9} />
-          <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.38} />
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
         </EffectComposer>
       ) : (
         <StereoView kind={stereo} />

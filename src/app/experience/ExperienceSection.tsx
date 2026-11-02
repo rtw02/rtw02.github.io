@@ -92,6 +92,9 @@ export default function ExperienceSection() {
       <div className="exp-stage" ref={stageRef}>
         {ok && <Scene shared={shared} reduce={reduce} fixed={false} reflect={reflect} stereo={stereo} />}
 
+        {/* vignette only — pure darkening, no grain (grain was lifting the blacks) */}
+        <div className="exps-vignette" aria-hidden="true" />
+
         {/* soft gradient seams so the top/bottom edges melt into the page */}
         <div className="exps-seam exps-seam--top" aria-hidden="true" />
         <div className="exps-seam exps-seam--bottom" aria-hidden="true" />
