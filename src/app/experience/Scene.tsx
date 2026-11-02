@@ -1,9 +1,30 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { EffectComposer, Bloom, Noise, Vignette, ChromaticAberration, DepthOfField } from '@react-three/postprocessing'
+import { BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
+import { AnaglyphEffect } from 'three/examples/jsm/effects/AnaglyphEffect.js'
+import { ParallaxBarrierEffect } from 'three/examples/jsm/effects/ParallaxBarrierEffect.js'
 import { WORKS, GAP, Z_START, Z_END, type Work } from './works'
+
+export type StereoMode = 'none' | 'anaglyph' | 'parallax'
+
+// Resolve the page's --bg token to a three color so the scene background/fog
+// match the surrounding page exactly (seamless seams).
+function pageBgColor(): THREE.Color {
+  try {
+    const probe = document.createElement('span')
+    probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#06070b'
+    document.body.appendChild(probe)
+    const resolved = getComputedStyle(probe).color
+    document.body.removeChild(probe)
+    return new THREE.Color().setStyle(resolved)
+  } catch {
+    return new THREE.Color('#06070b')
+  }
+}
 
 export type Shared = {
   progress: number
@@ -82,6 +103,47 @@ function Plates({ textures }: { textures: THREE.Texture[] }) {
   )
 }
 
+function Mirrors({ textures, visible }: { textures: THREE.Texture[]; visible: boolean }) {
+  const geo = useMemo(() => new THREE.PlaneGeometry(3.1, 4.65, 1, 1), [])
+  const floorY = -2.6
+  return (
+    <group visible={visible}>
+      {WORKS.map((w, i) => {
+        const side = i % 2 === 0 ? -1 : 1
+        const curve = i >= 4 ? (i - 3) * 0.8 : 0
+        const baseX = side * 2.1 + side * curve
+        const baseY = i % 2 ? 0.5 : -0.4
+        return (
+          <mesh
+            key={i}
+            geometry={geo}
+            position={[baseX, 2 * floorY - baseY, -4 - i * GAP]}
+            rotation={[0, -side * 0.32 - (i >= 4 ? side * 0.12 : 0), 0]}
+            scale={[1, -1, 1]}
+          >
+            <meshBasicMaterial map={textures[i]} transparent opacity={0.26} depthWrite={false} toneMapped={false} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+// Stereo 3D renderer (replaces the normal render; bypasses the post stack).
+function StereoView({ kind }: { kind: 'anaglyph' | 'parallax' }) {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const camera = useThree((s) => s.camera)
+  const size = useThree((s) => s.size)
+  const effect = useMemo(
+    () => (kind === 'anaglyph' ? new AnaglyphEffect(gl) : new ParallaxBarrierEffect(gl)),
+    [kind, gl]
+  )
+  useEffect(() => { effect.setSize(size.width, size.height) }, [effect, size])
+  useFrame(() => { effect.render(scene, camera) }, 1)
+  return null
+}
+
 function Rig({ shared, reduce }: { shared: React.MutableRefObject<Shared>; reduce: boolean }) {
   const { camera } = useThree()
 
@@ -115,11 +177,15 @@ export default function Scene({
   shared,
   reduce,
   fixed = true,
+  reflect = false,
+  stereo = 'none',
 }: {
   shared: React.MutableRefObject<Shared>
   reduce: boolean
   /** true = cover the whole viewport (standalone route); false = fill parent (inline section). */
   fixed?: boolean
+  reflect?: boolean
+  stereo?: StereoMode
 }) {
   const textures = useMemo(() => {
     const loader = new THREE.TextureLoader()
@@ -134,6 +200,8 @@ export default function Scene({
     })
   }, [])
 
+  const bg = useMemo(() => pageBgColor(), [])
+
   return (
     <Canvas
       dpr={[1, 2]}
@@ -141,10 +209,22 @@ export default function Scene({
       gl={{ antialias: true }}
       style={{ position: fixed ? 'fixed' : 'absolute', inset: 0, zIndex: 0 }}
     >
-      <color attach="background" args={['#050507']} />
-      <fogExp2 attach="fog" args={['#050507', 0.062]} />
+      <color attach="background" args={[bg]} />
+      <fogExp2 attach="fog" args={[bg, 0.055]} />
       <Plates textures={textures} />
+      <Mirrors textures={textures} visible={reflect} />
       <Rig shared={shared} reduce={reduce} />
+      {stereo === 'none' ? (
+        <EffectComposer multisampling={4}>
+          <DepthOfField focusDistance={0.02} focalLength={0.05} bokehScale={2} />
+          <Bloom intensity={0.7} luminanceThreshold={0.45} luminanceSmoothing={0.2} mipmapBlur />
+          <ChromaticAberration offset={new THREE.Vector2(0.0006, 0.0006)} radialModulation={false} modulationOffset={0} />
+          <Vignette eskil={false} offset={0.32} darkness={0.9} />
+          <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.38} />
+        </EffectComposer>
+      ) : (
+        <StereoView kind={stereo} />
+      )}
     </Canvas>
   )
 }
