@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { EffectComposer, Bloom, Noise, Vignette, ChromaticAberration, DepthOfField } from '@react-three/postprocessing'
+import { EffectComposer, Noise, Vignette, ChromaticAberration, DepthOfField } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
 import { AnaglyphEffect } from 'three/examples/jsm/effects/AnaglyphEffect.js'
@@ -217,7 +217,6 @@ export default function Scene({
       {stereo === 'none' ? (
         <EffectComposer multisampling={4}>
           <DepthOfField focusDistance={0.02} focalLength={0.05} bokehScale={2} />
-          <Bloom intensity={0.7} luminanceThreshold={0.45} luminanceSmoothing={0.2} mipmapBlur />
           <ChromaticAberration offset={new THREE.Vector2(0.0006, 0.0006)} radialModulation={false} modulationOffset={0} />
           <Vignette eskil={false} offset={0.32} darkness={0.9} />
           <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.38} />
