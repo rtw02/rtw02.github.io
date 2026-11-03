@@ -70,15 +70,14 @@ function Plates({ textures }: { textures: THREE.Texture[] }) {
     <>
       {WORKS.map((w, i) => {
         const side = i % 2 === 0 ? -1 : 1
-        const curve = i >= 4 ? (i - 3) * 0.8 : 0
-        const baseX = side * 2.1 + side * curve
+        const baseX = side * 1.35
         return (
           <mesh
             key={i}
             ref={(el) => { if (el) { meshes.current[i] = el; el.userData.baseX = baseX } }}
             geometry={geo}
             position={[baseX, i % 2 ? 0.5 : -0.4, -4 - i * GAP]}
-            rotation={[0, -side * 0.32 - (i >= 4 ? side * 0.12 : 0), 0]}
+            rotation={[0, -side * 0.32, 0]}
           >
             <meshBasicMaterial map={textures[i]} toneMapped={false} />
           </mesh>
@@ -95,15 +94,14 @@ function Mirrors({ textures, visible }: { textures: THREE.Texture[]; visible: bo
     <group visible={visible}>
       {WORKS.map((w, i) => {
         const side = i % 2 === 0 ? -1 : 1
-        const curve = i >= 4 ? (i - 3) * 0.8 : 0
-        const baseX = side * 2.1 + side * curve
+        const baseX = side * 1.35
         const baseY = i % 2 ? 0.5 : -0.4
         return (
           <mesh
             key={i}
             geometry={geo}
             position={[baseX, 2 * floorY - baseY, -4 - i * GAP]}
-            rotation={[0, -side * 0.32 - (i >= 4 ? side * 0.12 : 0), 0]}
+            rotation={[0, -side * 0.32, 0]}
             scale={[1, -1, 1]}
           >
             <meshBasicMaterial map={textures[i]} transparent opacity={0.26} depthWrite={false} toneMapped={false} />
