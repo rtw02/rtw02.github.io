@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from 'next-view-transitions'
 import { loadGalleries } from '@/lib/galleries-store'
 import { getLiveCount } from '@/lib/blob-photos'
 
@@ -22,7 +22,7 @@ export default async function GalleriesPage() {
           <Link key={g.slug} href={`/galleries/${g.slug}`} className="gal-card">
             <div className="gal-card-img-wrap">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.cover} alt={g.title} className="gal-card-img" loading="eager" fetchPriority="high" />
+              <img src={g.cover} alt={g.title} className="gal-card-img" loading="eager" fetchPriority="high" style={{ viewTransitionName: `gcover-${g.slug}` }} />
               <div className="gal-card-overlay" />
             </div>
             <div className="gal-card-info">

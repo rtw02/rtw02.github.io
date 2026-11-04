@@ -1040,6 +1040,17 @@ nav.on {
 /* bokeh → aperture iris loader canvas (transparent: iris carves through to page) */
 .loader-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 19999; pointer-events: none; }
 
+/* ── route transitions (cover zoom) ──────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  /* the shared cover morphs card <-> first gallery tile; the rest crossfades */
+  ::view-transition-group(*) {
+    animation-duration: .52s;
+    animation-timing-function: cubic-bezier(.76, 0, .24, 1);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: .4s; }
+}
+
 .loader {
   position: fixed; inset: 0; z-index: 19999;
   background: var(--bg);

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from 'next-view-transitions'
 import type { Gallery } from '@/data/galleries'
 
 export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; isAdmin?: boolean }) {
@@ -360,6 +360,7 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
                   className="gal-item-img"
                   loading={i < 12 ? 'eager' : 'lazy'}
                   fetchPriority={i < 6 ? 'high' : 'auto'}
+                  style={i === 0 ? { viewTransitionName: `gcover-${gallery.slug}` } : undefined}
                   onError={() => setDeletedPhotos(prev => { const s = new Set(prev); s.add(i); return s })}
                 />
                 <div className="gal-item-overlay" />
