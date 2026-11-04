@@ -49,7 +49,7 @@ export async function GET(
   if (requiredPin && !experienceKeys().has(key)) {
     const cookieStore = await cookies()
     const session = cookieStore.get('rw-session')
-    const isAdmin = session?.value === process.env.DASHBOARD_SECRET
+    const isAdmin = !!process.env.DASHBOARD_SECRET && session?.value === process.env.DASHBOARD_SECRET
     if (!isAdmin) {
       const galCookie = cookieStore.get(`rw-gallery-${slug}`)
       if (galCookie?.value !== requiredPin) {

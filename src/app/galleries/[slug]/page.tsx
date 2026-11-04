@@ -23,7 +23,7 @@ export default async function GalleryPage({ params }: { params: { slug: string }
   }
 
   const session = cookieStore.get('rw-session')
-  const isAdmin = session?.value === process.env.DASHBOARD_SECRET
+  const isAdmin = !!process.env.DASHBOARD_SECRET && session?.value === process.env.DASHBOARD_SECRET
 
   const live = await getLiveFilenames(slug)
   const livePhotos = filterLive(gallery.photos, live)

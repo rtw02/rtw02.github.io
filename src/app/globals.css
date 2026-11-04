@@ -782,8 +782,6 @@ nav.on {
 .lbx-actions .gal-btn:hover { background: rgba(255,255,255,.14); border-color: transparent; color: #fff; }
 .lbx-actions .gal-btn-delete { color: #ff7a70; background: transparent; border-color: transparent; }
 .lbx-actions .gal-btn-delete:hover { background: rgba(190,40,36,.4); border-color: transparent; }
-.lbx-replace { opacity: .85; }
-.lbx-replace:hover { opacity: 1; }
 
 /* ── DASHBOARD ───────────────────────────────────────────────────────────── */
 .dash-login {

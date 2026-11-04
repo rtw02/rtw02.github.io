@@ -16,14 +16,11 @@ export default function GalleryClient(
   const [downloading, setDownloading] = useState(false)
   const [lbxIdx, setLbxIdx] = useState<number | null>(null)
   const [progress, setProgress] = useState(0)
-  const [replacing, setReplacing] = useState(false)
-  const [replaceMsg, setReplaceMsg] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteMsg, setDeleteMsg] = useState('')
   const [shareMsg, setShareMsg] = useState('')
   const didInitPhoto = useRef(false)
   const gridRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const lbxCardRef = useRef<HTMLDivElement>(null)
   const tiltRaf = useRef<number>(0)
   const tilt = useRef({ tx: 0, ty: 0, cx: 0, cy: 0 })
@@ -189,6 +186,18 @@ export default function GalleryClient(
     setTimeout(() => setShareMsg(''), 1800)
   }, [gallery])
 
+  // Move the lightbox over VISIBLE photos only — skip deleted / broken (onError) ones
+  const stepLbx = useCallback((delta: number) => {
+    setLbxIdx(prev => {
+      if (prev === null) return null
+      const vis = gallery.photos.map((_, i) => i).filter(i => !deletedPhotos.has(i))
+      if (!vis.length) return null
+      const pos = vis.indexOf(prev)
+      if (pos === -1) return vis[0]
+      return vis[(pos + delta + vis.length) % vis.length]
+    })
+  }, [gallery.photos, deletedPhotos])
+
   // Deep link: open the lightbox on the shared photo once, on mount
   useEffect(() => {
     if (didInitPhoto.current || !initialPhoto) return
@@ -300,17 +309,13 @@ export default function GalleryClient(
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      setLbxIdx(prev => {
-        if (prev === null) return null
-        if (e.key === 'Escape') return null
-        if (e.key === 'ArrowRight') return (prev + 1) % gallery.photos.length
-        if (e.key === 'ArrowLeft') return (prev - 1 + gallery.photos.length) % gallery.photos.length
-        return prev
-      })
+      if (e.key === 'Escape') { setLbxIdx(null); return }
+      if (e.key === 'ArrowRight') stepLbx(1)
+      if (e.key === 'ArrowLeft') stepLbx(-1)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [gallery.photos.length])
+  }, [stepLbx])
 
   useEffect(() => {
     fetch('/api/analytics', {
@@ -471,6 +476,8 @@ export default function GalleryClient(
 
       {lbxIdx !== null && (() => {
         const photo = gallery.photos[lbxIdx]
+        const visIndices = gallery.photos.map((_, i) => i).filter(i => !deletedPhotos.has(i))
+        const lbxPos = visIndices.indexOf(lbxIdx)
         return (
           <>
           <div
@@ -481,24 +488,20 @@ export default function GalleryClient(
               const dx = e.changedTouches[0].clientX - touchStartX.current
               if (Math.abs(dx) > 50) {
                 e.stopPropagation()
-                setLbxIdx(prev => prev === null ? null :
-                  dx < 0
-                    ? (prev + 1) % gallery.photos.length
-                    : (prev - 1 + gallery.photos.length) % gallery.photos.length
-                )
+                stepLbx(dx < 0 ? 1 : -1)
               }
             }}
           >
-            <span className="lbx-counter">{String(lbxIdx + 1).padStart(2,'0')} / {String(gallery.photos.length).padStart(2,'0')}</span>
+            <span className="lbx-counter">{String(lbxPos + 1).padStart(2,'0')} / {String(visIndices.length).padStart(2,'0')}</span>
             <button className="lbx-close" onClick={() => setLbxIdx(null)}>✕</button>
-            <button className="lbx-nav lbx-prev" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx - 1 + gallery.photos.length) % gallery.photos.length) }}>←</button>
+            <button className="lbx-nav lbx-prev" onClick={e => { e.stopPropagation(); stepLbx(-1) }}>←</button>
             <div className="lbx-scene" onMouseMove={onTiltMove} onMouseLeave={onTiltLeave} onClick={e => e.stopPropagation()}>
               <div className="lbx-card" ref={lbxCardRef}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="lbx-img" src={photo.src} alt={photo.alt} />
               </div>
             </div>
-            <button className="lbx-nav lbx-next" onClick={e => { e.stopPropagation(); setLbxIdx((lbxIdx + 1) % gallery.photos.length) }}>→</button>
+            <button className="lbx-nav lbx-next" onClick={e => { e.stopPropagation(); stepLbx(1) }}>→</button>
             <div className="lbx-meta" onClick={e => e.stopPropagation()}>
               <div className="lbx-name">{photo.alt}</div>
               <div className="lbx-filename">{photo.filename}</div>
@@ -522,13 +525,6 @@ export default function GalleryClient(
                 )}
                 {isAdmin && (
                   <button
-                    className="gal-btn gal-btn-ghost lbx-replace"
-                    onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
-                    disabled={replacing}
-                  >{replacing ? replaceMsg || 'Uploading…' : '⇄ Replace'}</button>
-                )}
-                {isAdmin && (
-                  <button
                     className="gal-btn gal-btn-delete"
                     onClick={e => {
                       e.stopPropagation()
@@ -540,41 +536,6 @@ export default function GalleryClient(
               </div>
             </div>
           </div>
-          {isAdmin && (
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={async e => {
-                const file = e.target.files?.[0]
-                if (!file || lbxIdx === null) return
-                setReplacing(true)
-                setReplaceMsg('Uploading…')
-                const fd = new FormData()
-                fd.append('file', file)
-                fd.append('slug', gallery.slug)
-                fd.append('filename', gallery.photos[lbxIdx].filename)
-                try {
-                  const res = await fetch('/api/photo/replace', { method: 'POST', body: fd })
-                  if (res.ok) {
-                    setReplaceMsg('Done!')
-                    // bust browser cache for this photo
-                    const img = document.querySelector<HTMLImageElement>(`.lbx-img`)
-                    if (img) img.src = gallery.photos[lbxIdx].src + '?t=' + Date.now()
-                  } else {
-                    const { error } = await res.json().catch(() => ({ error: 'Failed' }))
-                    setReplaceMsg(error || 'Failed')
-                  }
-                } catch {
-                  setReplaceMsg('Failed')
-                } finally {
-                  setTimeout(() => { setReplacing(false); setReplaceMsg('') }, 2000)
-                  e.target.value = ''
-                }
-              }}
-            />
-          )}
           </>
         )
       })()}
