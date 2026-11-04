@@ -2,14 +2,16 @@
 
 import { useEffect, useRef } from 'react'
 import { Link } from 'next-view-transitions'
+import { useRouter } from 'next/navigation'
 
 /**
- * Gallery list card. Prefetches the gallery's photos into the browser cache so
- * they're ready the moment the cover-zoom transition fires:
- *  - on hover / focus / pointerdown → preload ALL of this gallery's photos
- *  - on idle after mount → warm the first few of every gallery (covers mobile taps)
- * Preloads are plain Image() requests; /api/photo is cached, so a second real
- * <img> request resolves instantly from cache.
+ * Gallery list card. Warms the gallery ahead of the cover-zoom transition
+ * WITHOUT starving the navigation itself:
+ *  - on hover / focus → prefetch the route (RSC) + preload only the first few
+ *    photos at LOW priority (so they don't compete with the page load)
+ *  - on idle after mount → warm just the cover of every gallery (cheap)
+ * The rest of the photos stream in after arrival (grid lazy-loads them); the
+ * morph target + above-fold tiles are what need to be ready, not all 20+.
  */
 export default function GalleryCard({
   slug, cover, title, subtitle, date, count, srcs,
@@ -18,28 +20,34 @@ export default function GalleryCard({
   date: string; count: number; srcs: string[]
 }) {
   const warmed = useRef(false)
+  const router = useRouter()
 
-  const preloadAll = () => {
+  const warm = () => {
     if (warmed.current) return
     warmed.current = true
-    for (const src of srcs) { const img = new Image(); img.src = src }
+    router.prefetch(`/galleries/${slug}`)
+    // only the above-fold tiles, at low priority, so the RSC/nav isn't starved
+    for (const src of srcs.slice(0, 8)) {
+      const img = new Image()
+      img.setAttribute('fetchpriority', 'low')
+      img.src = src
+    }
   }
 
   useEffect(() => {
-    // warm the first few of every gallery when the browser is idle
-    const warmTop = () => { for (const src of srcs.slice(0, 4)) { const img = new Image(); img.src = src } }
+    // on idle, warm just this gallery's cover (very cheap, helps cold taps)
+    const warmCover = () => { const img = new Image(); img.setAttribute('fetchpriority', 'low'); img.src = cover }
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
-    if (ric) ric(warmTop)
-    else setTimeout(warmTop, 1200)
-  }, [srcs])
+    if (ric) ric(warmCover)
+    else setTimeout(warmCover, 1500)
+  }, [cover])
 
   return (
     <Link
       href={`/galleries/${slug}`}
       className="gal-card"
-      onMouseEnter={preloadAll}
-      onFocus={preloadAll}
-      onPointerDown={preloadAll}
+      onMouseEnter={warm}
+      onFocus={warm}
     >
       <div className="gal-card-img-wrap">
         {/* eslint-disable-next-line @next/next/no-img-element */}

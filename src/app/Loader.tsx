@@ -19,7 +19,7 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
     const ctx = canvas.getContext('2d')!
     const DPR = Math.min(2, window.devicePixelRatio || 1)
     const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const MIN_MS = 1900     // minimum on-screen time
+    const MIN_MS = 2500     // minimum on-screen time (longer so the iris opens slowly)
     const MAX_MS = 8000     // hard cap so a stuck asset never traps the user
 
     // ---- real load tracking -------------------------------------------------
@@ -51,6 +51,7 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
     const parts = targets.map((t) => ({ tx: t.x, ty: t.y, x0: Math.random() - 0.5, y0: Math.random() - 0.5 }))
 
     const ease = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t)
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)   // decelerate — aperture settle
 
     let w = 0, h = 0
     const resize = () => {
@@ -87,8 +88,8 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
       ctx.clearRect(0, 0, w, h)
       ctx.fillStyle = '#0a0a0c'; ctx.fillRect(0, 0, w, h)
 
-      const p1 = Math.min(t / 0.6, 1)             // bokeh converge + sharpen
-      const p2 = Math.max(0, (t - 0.56) / 0.44)   // iris opens
+      const p1 = Math.min(t / 0.5, 1)             // bokeh converge + sharpen
+      const p2 = Math.max(0, (t - 0.45) / 0.55)   // iris opens — bigger, slower share
 
       // bokeh particles, fading out as the iris takes over
       const scale = minD * 0.42
@@ -123,8 +124,9 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
 
       // aperture iris — carve a growing hexagon hole to reveal the page beneath
       if (p2 > 0) {
-        const r = ease(p2) * (Math.hypot(w, h) / 2) * 1.02
-        const rot = -Math.PI / 2 + (1 - p2) * 0.6
+        const op = easeOut(p2)
+        const r = op * (Math.hypot(w, h) / 2) * 1.02
+        const rot = -Math.PI / 2 + (1 - op) * 0.6
         ctx.save()
         ctx.globalCompositeOperation = 'destination-out'
         ctx.beginPath()
