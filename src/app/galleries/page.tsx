@@ -1,15 +1,20 @@
 import { Link } from 'next-view-transitions'
 import { loadGalleries } from '@/lib/galleries-store'
-import { getLiveCount } from '@/lib/blob-photos'
+import { getLiveFilenames, filterLive } from '@/lib/blob-photos'
+import GalleryCard from './GalleryCard'
 
 export const metadata = { title: 'Galleries — Ryan Wong' }
 export const dynamic = 'force-dynamic'
 
 export default async function GalleriesPage() {
   const galleries = await loadGalleries()
-  const counts = await Promise.all(
-    galleries.map(g => getLiveCount(g.slug, g.photos))
-  )
+  // resolve each gallery's LIVE photos once (used for the count + the preload list)
+  const live = await Promise.all(galleries.map(g => getLiveFilenames(g.slug)))
+  const data = galleries.map((g, i) => {
+    const photos = filterLive(g.photos, live[i])
+    return { g, srcs: photos.map(p => p.src), count: photos.length }
+  })
+
   return (
     <main className="gal-list-page">
       <div className="gal-list-header">
@@ -18,19 +23,17 @@ export default async function GalleriesPage() {
         <p className="gal-list-sub">{galleries.length} collections</p>
       </div>
       <div className="gal-list-grid">
-        {galleries.map((g, i) => (
-          <Link key={g.slug} href={`/galleries/${g.slug}`} className="gal-card">
-            <div className="gal-card-img-wrap">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.cover} alt={g.title} className="gal-card-img" loading="eager" fetchPriority="high" style={{ viewTransitionName: `gcover-${g.slug}` }} />
-              <div className="gal-card-overlay" />
-            </div>
-            <div className="gal-card-info">
-              <span className="gal-card-date">{g.date}</span>
-              <h2 className="gal-card-name">{g.title}</h2>
-              <span className="gal-card-loc">{g.subtitle} &nbsp;·&nbsp; {counts[i]} photos</span>
-            </div>
-          </Link>
+        {data.map(({ g, srcs, count }) => (
+          <GalleryCard
+            key={g.slug}
+            slug={g.slug}
+            cover={g.cover}
+            title={g.title}
+            subtitle={g.subtitle}
+            date={g.date}
+            count={count}
+            srcs={srcs}
+          />
         ))}
       </div>
     </main>
