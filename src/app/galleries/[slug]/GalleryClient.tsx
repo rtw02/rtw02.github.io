@@ -4,7 +4,12 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'next-view-transitions'
 import type { Gallery } from '@/data/galleries'
 
-export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; isAdmin?: boolean }) {
+// Shareable per-photo URL uses the filename WITHOUT its extension (e.g. DSC08007).
+const photoKey = (filename: string) => filename.replace(/\.[^.]+$/, '')
+
+export default function GalleryClient(
+  { gallery, isAdmin, initialPhoto }: { gallery: Gallery; isAdmin?: boolean; initialPhoto?: string }
+) {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [visItems, setVisItems] = useState<Set<number>>(new Set())
   const [deletedPhotos, setDeletedPhotos] = useState<Set<number>>(new Set())
@@ -15,6 +20,8 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
   const [replaceMsg, setReplaceMsg] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteMsg, setDeleteMsg] = useState('')
+  const [shareMsg, setShareMsg] = useState('')
+  const didInitPhoto = useRef(false)
   const gridRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lbxCardRef = useRef<HTMLDivElement>(null)
@@ -157,6 +164,47 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
       setProgress(0)
     }
   }, [gallery, fetchBlobs, canWebShare])
+
+  // Share the photo's own page URL (native share sheet, clipboard fallback)
+  const sharePhotoLink = useCallback(async (idx: number) => {
+    const photo = gallery.photos[idx]
+    if (!photo || typeof window === 'undefined') return
+    const url = `${window.location.origin}/galleries/${gallery.slug}/${photoKey(photo.filename)}`
+    const data = { title: gallery.title, text: photo.alt || gallery.title, url }
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare(data))) {
+        await navigator.share(data)
+        return
+      }
+    } catch (err: unknown) {
+      // user dismissed the share sheet — nothing to copy
+      if (err instanceof Error && err.name === 'AbortError') return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareMsg('Link copied')
+    } catch {
+      setShareMsg('Copy failed')
+    }
+    setTimeout(() => setShareMsg(''), 1800)
+  }, [gallery])
+
+  // Deep link: open the lightbox on the shared photo once, on mount
+  useEffect(() => {
+    if (didInitPhoto.current || !initialPhoto) return
+    didInitPhoto.current = true
+    const idx = gallery.photos.findIndex(p => photoKey(p.filename) === initialPhoto)
+    if (idx >= 0) setLbxIdx(idx)
+  }, [initialPhoto, gallery.photos])
+
+  // Keep the address bar in sync with the open photo (shallow — no refetch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const path = lbxIdx === null
+      ? `/galleries/${gallery.slug}`
+      : `/galleries/${gallery.slug}/${photoKey(gallery.photos[lbxIdx].filename)}`
+    window.history.replaceState(null, '', path)
+  }, [lbxIdx, gallery.slug, gallery.photos])
 
   // JS masonry — left-to-right chronological order with no gaps
   const masonryLayout = useCallback(() => {
@@ -455,6 +503,10 @@ export default function GalleryClient({ gallery, isAdmin }: { gallery: Gallery; 
               <div className="lbx-name">{photo.alt}</div>
               <div className="lbx-filename">{photo.filename}</div>
               <div className="lbx-actions">
+                <button
+                  className="gal-btn gal-btn-ghost lbx-share"
+                  onClick={e => { e.stopPropagation(); sharePhotoLink(lbxIdx) }}
+                >{shareMsg || '⤴ Share'}</button>
                 {canWebShare ? (
                   <button
                     className="gal-btn gal-btn-ghost lbx-dl"

@@ -386,8 +386,14 @@ nav.on {
   position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
   text-align: center; pointer-events: all; white-space: nowrap;
 }
-.lbx-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 300; margin-bottom: .2rem; }
-.lbx-filename { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.65); margin-bottom: .3rem; }
+.lbx-name {
+  font-family: var(--serif); font-size: 1.2rem; font-weight: 400; margin-bottom: .2rem;
+  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 2px 14px rgba(0,0,0,.5);
+}
+.lbx-filename {
+  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; margin-bottom: .3rem;
+  color: rgba(255,255,255,.85); text-shadow: 0 1px 6px rgba(0,0,0,.6);
+}
 .lbx-year { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-2); }
 .lbx-close {
   position: absolute; top: 1.5rem; right: 1.75rem;
