@@ -87,6 +87,23 @@ async function main() {
     urls = await uploadGallery(gallery, urls)
   }
 
+  // Upload the catalog manifest — the site's source of truth (read by
+  // src/lib/galleries-store.ts). Always re-uploaded so edits propagate.
+  try {
+    const catalog = await readFile(path.join(process.cwd(), 'private-photos', 'catalog.json'))
+    const { url } = await put('catalog.json', catalog, {
+      access: 'private' as const,
+      addRandomSuffix: false,
+      contentType: 'application/json',
+      allowOverwrite: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    })
+    urls['catalog.json'] = url
+    console.log('\nUploaded catalog.json')
+  } catch {
+    console.warn('\nNo private-photos/catalog.json found — skipped catalog upload')
+  }
+
   console.log('\nWriting blob-urls.json…')
   await writeFile(OUT_FILE, JSON.stringify(urls, null, 2))
   console.log(`Done. ${Object.keys(urls).length} total URLs saved.`)

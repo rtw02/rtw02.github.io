@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { galleries } from '@/data/galleries'
+import type { Gallery } from '@/data/galleries'
 
 type PinState = { enabled: boolean; value: string }
 type PinsMap = Record<string, PinState>
@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [pinSaving, setPinSaving] = useState<Record<string, boolean>>({})
   const [pinMsg, setPinMsg] = useState<Record<string, string>>({})
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [galleries, setGalleries] = useState<Gallery[]>([])
 
   useEffect(() => {
     fetch('/api/analytics')
@@ -40,16 +41,23 @@ export default function DashboardPage() {
       .then(setCounts)
       .catch(() => {})
 
-    fetch('/api/galleries/pin')
+    // catalog comes from Blob (via /api/galleries); build the pin map from it
+    fetch('/api/galleries')
       .then(r => r.json())
-      .then((stored: Record<string, string>) => {
-        const map: PinsMap = {}
-        galleries.forEach(g => {
-          map[g.slug] = stored[g.slug]
-            ? { enabled: true, value: stored[g.slug] }
-            : { enabled: false, value: '' }
-        })
-        setPins(map)
+      .then((gs: Gallery[]) => {
+        setGalleries(gs)
+        fetch('/api/galleries/pin')
+          .then(r => r.json())
+          .then((stored: Record<string, string>) => {
+            const map: PinsMap = {}
+            gs.forEach(g => {
+              map[g.slug] = stored[g.slug]
+                ? { enabled: true, value: stored[g.slug] }
+                : { enabled: false, value: '' }
+            })
+            setPins(map)
+          })
+          .catch(() => {})
       })
       .catch(() => {})
   }, [])

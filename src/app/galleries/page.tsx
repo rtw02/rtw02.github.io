@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { galleries } from '@/data/galleries'
+import { loadGalleries } from '@/lib/galleries-store'
 import { getLiveCount } from '@/lib/blob-photos'
 
 export const metadata = { title: 'Galleries — Ryan Wong' }
 export const dynamic = 'force-dynamic'
 
 export default async function GalleriesPage() {
+  const galleries = await loadGalleries()
   const counts = await Promise.all(
     galleries.map(g => getLiveCount(g.slug, g.photos))
   )

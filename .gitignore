@@ -36,3 +36,6 @@ next-env.d.ts
 
 # private photos (stored in Vercel Blob)
 private-photos/
+
+# photo-sort pipeline staging (photo metadata, previews)
+scratch/

@@ -4,7 +4,6 @@
 // CORS). If `EXPERIENCE_PHOTOS` is populated with Ryan-approved mission filenames,
 // those take priority. Covers are already public on /galleries, so no new exposure.
 
-import { galleries } from '@/data/galleries'
 import { EXPERIENCE_SLUG, EXPERIENCE_PHOTOS } from '@/lib/experience-photos'
 
 export type Work = {
@@ -25,16 +24,7 @@ const TINTS: Array<{ a: Work['a']; b: Work['b'] }> = [
   { a: [20, 0.65, 0.18], b: [8, 0.5, 0.05] },
 ]
 
-// one plane per gallery cover
-const COVERS: Work[] = galleries.map((g, i) => ({
-  title: g.title,
-  meta: `${g.subtitle} · ${g.date}`,
-  a: TINTS[i % TINTS.length].a,
-  b: TINTS[i % TINTS.length].b,
-  src: g.cover,
-}))
-
-// Repeat the cover set so the corridor has depth (covers cycle, never adjacent dupes).
+// Repeat the set so the corridor has depth (frames cycle, never adjacent dupes).
 function fill(src: Work[], min: number): Work[] {
   if (src.length === 0) return src
   const n = Math.max(min, src.length)
@@ -50,8 +40,8 @@ const MISSION: Work[] = EXPERIENCE_PHOTOS.map((file, i) => ({
   src: `/api/photo/${EXPERIENCE_SLUG}/${file}`,
 }))
 
-// mission photos first, then gallery covers, cycled so the corridor stays full
-export const WORKS: Work[] = fill([...MISSION, ...COVERS], 8)
+// approved mission frames, cycled so the corridor stays full
+export const WORKS: Work[] = fill(MISSION, 8)
 
 export const GAP = 5.4
 export const Z_START = 9

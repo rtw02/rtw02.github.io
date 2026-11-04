@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
-import { galleries } from '@/data/galleries'
+import { findGallery } from '@/lib/galleries-store'
 import { getGalleryPin } from '@/lib/gallery-pins'
 import { getLiveFilenames, filterLive } from '@/lib/blob-photos'
 import GalleryClient from './GalleryClient'
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function GalleryPage({ params }: { params: { slug: string } }) {
   const { slug } = params
-  const gallery = galleries.find(g => g.slug === slug)
+  const gallery = await findGallery(slug)
   if (!gallery) notFound()
 
   const requiredPin = await getGalleryPin(slug)

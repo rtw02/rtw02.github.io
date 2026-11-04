@@ -86,7 +86,12 @@ export async function GET(
 
     const etag = blobRes.headers.get('etag') ?? ifNoneMatch ?? undefined
     const lastModified = blobRes.headers.get('last-modified') ?? undefined
-    const revalidate: Record<string, string> = { 'Cache-Control': 'private, no-cache' }
+    // Public galleries: cache hard at the CDN + browser (big speed win).
+    // Gated galleries: keep private + revalidating so access stays enforced.
+    const cacheHeader = requiredPin
+      ? 'private, no-cache'
+      : 'public, max-age=31536000, s-maxage=31536000, immutable'
+    const revalidate: Record<string, string> = { 'Cache-Control': cacheHeader }
     if (etag) revalidate['ETag'] = etag
     if (lastModified) revalidate['Last-Modified'] = lastModified
 
