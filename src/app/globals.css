@@ -387,29 +387,38 @@ nav.on {
   text-align: center; pointer-events: all; white-space: nowrap;
 }
 .lbx-name { font-family: var(--serif); font-size: 1.2rem; font-weight: 300; margin-bottom: .2rem; }
-.lbx-filename { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: .3rem; }
+.lbx-filename { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.65); margin-bottom: .3rem; }
 .lbx-year { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-2); }
 .lbx-close {
   position: absolute; top: 1.5rem; right: 1.75rem;
-  width: 2.5rem; height: 2.5rem; border: none; background: none; cursor: pointer;
-  color: var(--ink-2); font-size: 1.5rem; line-height: 1;
+  width: 2.75rem; height: 2.75rem; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.28);
+  background: rgba(10,10,12,.6); backdrop-filter: blur(8px);
+  color: #fff; font-size: 1.45rem; line-height: 1; font-weight: 500;
   display: flex; align-items: center; justify-content: center;
-  transition: color .2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+  transition: background .2s, border-color .2s, transform .15s;
 }
-.lbx-close:hover { color: var(--ink); }
+.lbx-close:hover { background: rgba(0,0,0,.85); border-color: rgba(255,255,255,.6); transform: scale(1.06); }
 .lbx-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
-  width: 3rem; height: 3rem; border: 1px solid oklch(93% .005 65 / .15);
-  background: none; cursor: pointer; color: var(--ink-2); font-size: 1.1rem;
+  width: 3.25rem; height: 3.25rem; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.28);
+  background: rgba(10,10,12,.6); backdrop-filter: blur(8px); cursor: pointer;
+  color: #fff; font-size: 1.35rem; font-weight: 500;
   display: flex; align-items: center; justify-content: center;
-  transition: color .2s, border-color .2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+  transition: background .2s, border-color .2s, transform .15s;
 }
-.lbx-nav:hover { color: var(--ink); border-color: oklch(93% .005 65 / .4); }
+.lbx-nav:hover { background: rgba(0,0,0,.85); border-color: rgba(255,255,255,.6); transform: translateY(-50%) scale(1.06); }
 .lbx-prev { left: 1.5rem; }
 .lbx-next { right: 1.5rem; }
 .lbx-counter {
   position: absolute; top: 1.75rem; left: 50%; transform: translateX(-50%);
-  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+  font-size: .66rem; letter-spacing: .2em; text-transform: uppercase; color: #fff; font-weight: 500;
+  padding: .4rem .75rem; border-radius: 999px;
+  background: rgba(10,10,12,.55); backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
 }
 
 /* ── ABOUT ──────────────────────────────────────────────────────────────── */
