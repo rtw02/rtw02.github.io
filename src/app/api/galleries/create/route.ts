@@ -20,8 +20,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Sanitize slug before it touches the filesystem (prevents path traversal)
+    const cleanSlug = slug.replace(/\.\./g, '').replace(/[^a-zA-Z0-9_-]/g, '')
+    if (!cleanSlug) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
+
     // Save photos to public/galleries/[slug]/
-    const dir = path.join(process.cwd(), 'public', 'galleries', slug)
+    const base = path.join(process.cwd(), 'public', 'galleries')
+    const dir = path.join(base, cleanSlug)
+    if (!dir.startsWith(base + path.sep)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
     await mkdir(dir, { recursive: true })
 
     const photos: { src: string; alt: string; filename: string }[] = []
@@ -32,7 +42,7 @@ export async function POST(request: NextRequest) {
       const name   = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
       await writeFile(path.join(dir, name), buffer)
       photos.push({
-        src: `/galleries/${slug}/${name}`,
+        src: `/galleries/${cleanSlug}/${name}`,
         alt: `${title} — ${date}`,
         filename: name,
       })
@@ -41,13 +51,13 @@ export async function POST(request: NextRequest) {
     // Store gallery metadata in KV if available
     try {
       const { kv } = await import('@vercel/kv')
-      const gallery = { slug, title, subtitle, date, cover: photos[0].src, photos }
-      await kv.hset('dynamic-galleries', { [slug]: JSON.stringify(gallery) })
+      const gallery = { slug: cleanSlug, title, subtitle, date, cover: photos[0].src, photos }
+      await kv.hset('dynamic-galleries', { [cleanSlug]: JSON.stringify(gallery) })
     } catch {
       // KV not configured — gallery exists on disk, just won't appear in list until redeployed
     }
 
-    return NextResponse.json({ ok: true, slug, count: photos.length })
+    return NextResponse.json({ ok: true, slug: cleanSlug, count: photos.length })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { safeEqual } from '@/lib/safe-compare'
 
 export async function POST(request: NextRequest) {
   const { password } = await request.json()
 
-  if (!process.env.DASHBOARD_PASSWORD || password !== process.env.DASHBOARD_PASSWORD) {
+  if (!process.env.DASHBOARD_PASSWORD || !safeEqual(password, process.env.DASHBOARD_PASSWORD)) {
     return NextResponse.json({ error: 'Wrong password' }, { status: 401 })
   }
 

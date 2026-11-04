@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getGalleryPin } from '@/lib/gallery-pins'
+import { safeEqual } from '@/lib/safe-compare'
 
 export async function POST(request: NextRequest) {
   const { slug, pin } = await request.json()
@@ -14,13 +15,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Gallery not found or not protected' }, { status: 404 })
   }
 
-  if (pin !== requiredPin) {
+  if (!safeEqual(pin, requiredPin)) {
     return NextResponse.json({ error: 'Incorrect PIN' }, { status: 401 })
   }
 
   const res = NextResponse.json({ ok: true })
   res.cookies.set(`rw-gallery-${slug}`, requiredPin, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
