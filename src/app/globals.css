@@ -760,9 +760,23 @@ nav.on {
 .gal-btn-sel-dl:disabled { opacity: .5; cursor: not-allowed; }
 
 /* lightbox dl / replace buttons */
-.lbx-actions { display: flex; gap: .5rem; align-items: center; justify-content: center; margin-top: .8rem; pointer-events: all; }
-.lbx-dl, .lbx-replace { font-size: .68rem; pointer-events: all; }
-.lbx-replace { opacity: .75; }
+/* one frosted bar grouping Download / Replace / Delete, readable over any photo */
+.lbx-actions {
+  display: inline-flex; gap: .25rem; align-items: center; justify-content: center;
+  margin-top: .9rem; pointer-events: all; flex-wrap: wrap;
+  background: rgba(8,8,10,.62); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 999px;
+  padding: .4rem .5rem; box-shadow: 0 6px 24px rgba(0,0,0,.45);
+}
+/* buttons inside the bar: the bar carries the contrast, so they go borderless + white */
+.lbx-actions .gal-btn {
+  background: transparent; border: 1px solid transparent; color: #fff;
+  font-size: .68rem; pointer-events: all; border-radius: 999px;
+}
+.lbx-actions .gal-btn:hover { background: rgba(255,255,255,.14); border-color: transparent; color: #fff; }
+.lbx-actions .gal-btn-delete { color: #ff7a70; background: transparent; border-color: transparent; }
+.lbx-actions .gal-btn-delete:hover { background: rgba(190,40,36,.4); border-color: transparent; }
+.lbx-replace { opacity: .85; }
 .lbx-replace:hover { opacity: 1; }
 
 /* ── DASHBOARD ───────────────────────────────────────────────────────────── */
