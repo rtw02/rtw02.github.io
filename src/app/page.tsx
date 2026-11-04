@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import Lenis from 'lenis';
 import ExperienceSection from './experience/ExperienceSection';
+import Loader from './Loader';
 import './experience/experience.css';
 // cursor is rendered globally in layout.tsx
 
 export default function Portfolio() {
   const [lbxIdx, setLbxIdx] = useState<number | null>(null);
-  const [count,  setCount]  = useState(0);
   const [loaded, setLoaded] = useState(false);
   const videoRef     = useRef<HTMLVideoElement>(null);
   const vidTrackRef  = useRef<HTMLDivElement>(null);
@@ -35,28 +35,6 @@ export default function Portfolio() {
     { num:'15', tag:'Editorial',  name:'The Room',            year:'Event — 2026',       src:'/images/jazz-bar.jpg',          alt:'Jazz bar ambiance, candlelit table' },
     { num:'16', tag:'Portrait',   name:'Harvest',             year:'Photography — 2026', src:'/images/apple-juggle.jpg',      alt:'Portrait in apple orchard, Fishkill Farms' },
   ];
-
-  // ── Loading counter ───────────────────────────────────────────────────────
-  useEffect(() => {
-    let frame = 0;
-    const total = 100;
-    let rafId: number;
-
-    const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-
-    const tick = () => {
-      frame++;
-      const progress = ease(Math.min(frame / total, 1));
-      setCount(Math.round(progress * 100));
-      if (frame < total) {
-        rafId = requestAnimationFrame(tick);
-      } else {
-        setTimeout(() => setLoaded(true), 500);
-      }
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, []);
 
   // ── Lenis smooth scroll ───────────────────────────────────────────────────
   useEffect(() => {
@@ -184,13 +162,13 @@ export default function Portfolio() {
 
   return (
     <>
-      {/* ── LOADER ───────────────────────────────────────────────────────── */}
-      <div className={`loader${loaded ? ' loader--out' : ''}`} aria-hidden="true">
-        <div className="loader-inner">
-          <div className="loader-count">{count}</div>
-          <div className="loader-label">Loading</div>
-        </div>
-      </div>
+      {/* ── LOADER (bokeh coalesce → aperture iris) ──────────────────────── */}
+      {!loaded && (
+        <Loader
+          srcs={works.map(w => w.src).concat('/images/hero-nyc.jpg')}
+          onDone={() => setLoaded(true)}
+        />
+      )}
 
       {/* ── NAV ──────────────────────────────────────────────────────────── */}
       <nav id="nav" role="navigation" aria-label="Main">

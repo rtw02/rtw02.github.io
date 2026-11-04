@@ -1037,6 +1037,9 @@ nav.on {
 .unlock-hint a:hover { color: var(--ink); }
 
 /* ── LOADER ─────────────────────────────────────────────────────────────── */
+/* bokeh → aperture iris loader canvas (transparent: iris carves through to page) */
+.loader-canvas { position: fixed; inset: 0; z-index: 19999; pointer-events: none; }
+
 .loader {
   position: fixed; inset: 0; z-index: 19999;
   background: var(--bg);
