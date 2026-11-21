@@ -8,6 +8,11 @@ import { useEffect, useRef } from 'react'
  * the page. Progress tracks REAL asset loading (the passed image srcs), floored
  * by a minimum duration so the animation always plays cleanly, and capped so a
  * failed/slow asset can never hang the screen.
+ *
+ * Motion is driven by a single frame-rate-independent smoother (exponential
+ * toward target by elapsed dt), so pacing is identical at 30/60/120Hz and the
+ * progress settles instead of snapping. The "R.W" is sampled on a fixed grid
+ * (deterministic + dense) so the glyph reads the same every load.
  */
 export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -19,8 +24,9 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
     const ctx = canvas.getContext('2d')!
     const DPR = Math.min(2, window.devicePixelRatio || 1)
     const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const MIN_MS = 2500     // minimum on-screen time (longer so the iris opens slowly)
+    const MIN_MS = 2400     // minimum on-screen time so the iris opens unhurried
     const MAX_MS = 8000     // hard cap so a stuck asset never traps the user
+    const TAU = 150         // smoothing time-constant (ms); fps-independent
 
     // ---- real load tracking -------------------------------------------------
     let loaded = 0
@@ -31,11 +37,10 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
       img.onload = bump
       img.onerror = bump
       img.src = src
-      // decode() where available for a truer "ready" signal
       if (img.decode) img.decode().then(bump).catch(() => {})
     })
 
-    // ---- bokeh target: sample points from "R.W" -----------------------------
+    // ---- bokeh target: sample "R.W" on a fixed grid (deterministic + dense) --
     const W = 420, H = 150
     const tc = document.createElement('canvas'); tc.width = W; tc.height = H
     const tx = tc.getContext('2d')!
@@ -43,15 +48,29 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
     tx.font = `700 ${Math.round(H * 0.6)}px Georgia, serif`
     tx.fillText('R.W', W / 2, H / 2 + 4)
     const data = tx.getImageData(0, 0, W, H).data
-    const targets: Array<{ x: number; y: number }> = []
-    for (let i = 0; i < 6000 && targets.length < 160; i++) {
-      const px = (Math.random() * W) | 0, py = (Math.random() * H) | 0
-      if (data[(py * W + px) * 4 + 3] > 128) targets.push({ x: px / W - 0.5, y: py / H - 0.5 })
+    const hits: Array<{ x: number; y: number }> = []
+    for (let py = 0; py < H; py += 2) {
+      for (let px = 0; px < W; px += 2) {
+        if (data[(py * W + px) * 4 + 3] > 128) hits.push({ x: px / W - 0.5, y: py / H - 0.5 })
+      }
     }
-    const parts = targets.map((t) => ({ tx: t.x, ty: t.y, x0: Math.random() - 0.5, y0: Math.random() - 0.5 }))
+    // even, stable subsample to a fixed particle count
+    const COUNT = Math.min(hits.length, 230)
+    // tiny deterministic jitter so origins scatter without reseeding per-load
+    const rnd = (n: number) => { const s = Math.sin(n * 12.9898) * 43758.5453; return s - Math.floor(s) }
+    const parts = Array.from({ length: COUNT }, (_, i) => {
+      const t = hits[Math.floor((i * hits.length) / COUNT)]
+      const a = rnd(i + 1) * Math.PI * 2
+      const d = 0.35 + rnd(i + 7) * 0.55
+      return {
+        tx: t.x, ty: t.y,
+        x0: Math.cos(a) * d, y0: Math.sin(a) * d,
+        delay: rnd(i + 13) * 0.18,   // staggered convergence
+      }
+    })
 
     const ease = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t)
-    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)   // decelerate — aperture settle
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
     let w = 0, h = 0
     const resize = () => {
@@ -62,6 +81,7 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
 
     let raf = 0
     const start = performance.now()
+    let last = start
     let shown = 0
 
     const finish = () => {
@@ -73,14 +93,18 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
 
     const frame = (now: number) => {
       const el = now - start
+      const dt = Math.min(64, now - last); last = now
       const real = REDUCED ? 1 : Math.min(loaded / total, 1)
-      // target: never ahead of real load, never faster than MIN, forced done by MAX
-      let target = Math.min(real, el / MIN_MS)
+
+      // target: never ahead of real load, never faster than MIN, forced by MAX
+      let target = REDUCED ? 1 : Math.min(real, el / MIN_MS)
       if (el >= MAX_MS) target = 1
       if (real >= 1 && el >= MIN_MS) target = 1
-      shown += (target - shown) * 0.12
-      if (target >= 0.999 && shown > 0.994) shown = 1
-      const t = REDUCED ? 1 : ease(shown)
+
+      // frame-rate-independent smoothing toward target (no fps-coupled snap)
+      shown += (target - shown) * (1 - Math.exp(-dt / TAU))
+      if (target >= 0.999 && shown > 0.996) shown = 1
+      const s = shown                         // single easing — applied per stage
 
       const cx = w / 2, cy = h / 2
       const minD = Math.min(w, h)
@@ -88,8 +112,8 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
       ctx.clearRect(0, 0, w, h)
       ctx.fillStyle = '#0a0a0c'; ctx.fillRect(0, 0, w, h)
 
-      const p1 = Math.min(t / 0.5, 1)             // bokeh converge + sharpen
-      const p2 = Math.max(0, (t - 0.45) / 0.55)   // iris opens — bigger, slower share
+      const p1 = Math.min(s / 0.5, 1)             // bokeh converge + sharpen
+      const p2 = Math.max(0, (s - 0.45) / 0.55)   // iris opens — bigger, slower share
 
       // bokeh particles, fading out as the iris takes over
       const scale = minD * 0.42
@@ -97,10 +121,11 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
       if (bokehAlpha > 0.01) {
         ctx.globalCompositeOperation = 'lighter'
         for (const p of parts) {
-          const e = ease(p1)
+          const local = p.delay >= 1 ? p1 : Math.min(Math.max((p1 - p.delay) / (1 - p.delay), 0), 1)
+          const e = ease(local)
           const x = cx + (p.x0 + (p.tx - p.x0) * e) * scale
           const y = cy + (p.y0 + (p.ty - p.y0) * e) * scale
-          const rad = (1 - p1) * minD * 0.06 + 2.2
+          const rad = (1 - local) * minD * 0.06 + 2.2
           const g = ctx.createRadialGradient(x, y, 0, x, y, rad)
           g.addColorStop(0, `rgba(255,224,180,${bokehAlpha})`)
           g.addColorStop(0.7, `rgba(214,96,42,${bokehAlpha * 0.5})`)
@@ -156,7 +181,7 @@ export default function Loader({ srcs, onDone }: { srcs: string[]; onDone: () =>
         ctx.fillStyle = '#8a847c'
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
         ctx.font = `500 ${Math.round(13 * DPR)}px Archivo, Arial, sans-serif`
-        const fstop = (22 - t * 20.6).toFixed(1)
+        const fstop = (22 - ease(Math.min(s, 1)) * 20.6).toFixed(1)
         ctx.fillText(`ƒ/${fstop}   1/250   ISO 100`, 24 * DPR, h - 28 * DPR)
         ctx.restore()
       }
